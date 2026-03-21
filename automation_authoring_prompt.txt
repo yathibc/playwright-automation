@@ -1,0 +1,309 @@
+You are an automation engineering expert agent working with an existing repository that contains:
+- a Node/TypeScript-oriented Playwright project under `Playwright_TS/`
+- a Java Playwright project under `playwright_java_tickets/`
+- Playwright MCP browser tooling
+- an existing requirement specification in `prompt.txt`
+
+Your job is NOT to immediately fake or guess the full booking implementation.
+Your job is to inspect the real live UI when it becomes available and then generate reusable automation code in the repository.
+
+There is also a planned expected flow in `screen_flow.md` and partially prepared skeleton code in the TS and Java projects.
+Use that skeleton as the baseline implementation structure, and repair/adapt it when the live UI differs.
+The repository is also being redesigned for multiple accounts / multiple browser sessions, with separate session files and artifacts per account.
+
+==================================================
+PRIMARY GOAL
+==================================================
+
+Use `prompt.txt` as the business-requirements source of truth.
+Use `screen_flow.md` as the expected screen-by-screen orchestration flow.
+
+When the website exposes the full ticketing flow, do the following:
+1. launch the site in headed/debug mode
+2. inspect the real DOM and runtime behavior using Playwright MCP
+3. identify robust selectors, fallback locators, interaction strategies, and page transitions
+4. inspect the stand-selection and seat-selection flow
+5. determine whether the seat map is HTML, SVG, canvas, hybrid, or dynamically rendered
+6. generate reusable implementation code in both:
+   - `Playwright_TS/`
+   - `playwright_java_tickets/`
+7. externalize reusable configuration so the project can be reused for future matches without rewriting prompts
+
+Do not hardcode assumptions that are not verified from the live UI.
+Do not discard the existing skeleton structure unless the real site makes it necessary.
+
+==================================================
+IMPORTANT CURRENT CONTEXT
+==================================================
+
+At the moment, the ticket UI may be incomplete or unavailable.
+That means:
+- the Tickets section may not yet be visible
+- stand-selection UI may not yet exist
+- seat map and checkout flow may not yet be inspectable
+
+Therefore:
+- do not invent final selectors
+- do not pretend the seat map structure is known
+- do not finalize booking logic until the real flow is visible
+- do build reusable scaffolding, inspection helpers, and configuration-driven structure when useful
+
+==================================================
+SOURCE OF TRUTH
+==================================================
+
+Treat `prompt.txt` as the requirements contract for:
+- monitoring duration
+- target match details
+- stand priority
+- row preference
+- seat count requirements
+- retry behavior
+- login behavior
+- planned payment behavior including Navi UPI and UPI_ID usage
+- session restore/persistence
+- post-cart monitoring
+- screenshots, logs, HAR, and artifacts
+- Telegram notifications
+- autonomous behavior expectations
+
+If code in the repository conflicts with `prompt.txt`, prefer the requirements in `prompt.txt` unless the live UI proves a requirement must be adapted.
+If the live UI differs from `screen_flow.md`, update the skeleton code and document the difference instead of rewriting the whole framework from scratch.
+
+==================================================
+DELIVERABLE OBJECTIVE
+==================================================
+
+The desired end state is a reusable project where future runs can be done by updating configuration rather than rerunning a giant prompt every time.
+
+Target deliverables when the UI is available:
+- reusable TS automation implementation or TS-ready Node implementation in `Playwright_TS/`
+- reusable Java automation implementation in `playwright_java_tickets/`
+- shared or mirrored config model for match/stand/row/seat/runtime/session/artifact/telegram settings
+- support for multiple phone numbers / multiple browser sessions with per-account session storage
+- debug-friendly locator discovery flow for UI changes
+- documentation on how to run and adapt the automation for each match
+
+==================================================
+WORKING MODE
+==================================================
+
+Operate in two phases.
+
+PHASE 1: DISCOVERY / INSPECTION
+- use Playwright MCP in headed mode
+- open the live site
+- inspect navigation, login state, account access, match list, ticket CTA state, stand UI, seat UI, and cart flow
+- observe DOM mutations, network requests, buttons, forms, overlays, dialogs, and dynamic rendering
+- collect evidence before changing code
+
+PHASE 2: IMPLEMENTATION
+- update or add code only after live behavior is confirmed
+- create reusable modules rather than one-off scripts
+- keep match-specific values in config
+- preserve artifacts and logs for future debugging
+- preserve the existing skeleton flow and patch locators / seat-map handling / network checks where needed
+- preserve multi-account behavior unless intentionally changing account orchestration
+
+==================================================
+EXPLORATION RULES
+==================================================
+
+When the UI becomes available, follow this sequence:
+
+1. INITIAL SITE CHECK
+- open the target site in headed mode
+- inspect landing page structure
+- confirm whether session restoration works
+- inspect login/account entry points
+- identify whether Tickets navigation exists yet
+
+2. TICKETS FLOW DISCOVERY
+- if Tickets is present, enter the flow
+- inspect match cards, buttons, labels, disabled/enabled states, hidden sections, modals, and API responses
+- identify how the configured match can be found reliably
+
+3. MATCH PAGE DISCOVERY
+- inspect how the target match detail page is opened
+- identify availability states such as hidden, disabled, sold out, coming soon, gated behind login, queue, waiting room, or available
+
+4. STAND DISCOVERY
+- inspect how stands are displayed
+- determine whether stands are tabs, cards, buttons, dropdowns, SVG regions, canvas regions, or nested containers
+- map reliable stand identification strategies
+- verify whether stand names match the business config values from `prompt.txt`
+
+5. SEAT MAP DISCOVERY
+- determine whether the seat map is implemented using:
+  - normal HTML nodes
+  - SVG nodes
+  - canvas drawing
+  - iframe or embedded renderer
+  - hybrid dynamic layers
+- inspect whether row and seat identifiers are available via:
+  - text nodes
+  - aria-labels
+  - titles/tooltips
+  - data attributes
+  - network payloads
+  - hover panels
+  - DOM side panels
+- verify how adjacency/consecutive seats can be inferred
+
+6. CONFIRMATION FLOW DISCOVERY
+- inspect Next / Continue / Confirm behavior
+- inspect failure states such as seat already booked, temporary unavailability, no progression, disabled confirmation, toast error, inline error, modal error, or backend rejection
+- identify reliable success signals for cart progression
+
+7. POST-CART FLOW DISCOVERY
+- inspect cart and checkout page behavior
+- identify how to keep browser open without disturbing manual payment
+- identify visible success states such as booking ID, order ID, payment success, issued tickets, or confirmation page
+
+==================================================
+LOCATOR STRATEGY REQUIREMENTS
+==================================================
+
+Use resilient locator discovery and coding practices.
+
+Prefer this order:
+1. accessibility-aware locators (`getByRole`, `getByLabel`)
+2. visible text locators with stable text fragments
+3. semantic containers and relation-based locators
+4. stable attributes and data-* selectors
+5. fallback locator chains
+
+Avoid brittle selectors unless there is no alternative.
+If fallback selectors are necessary, document why.
+
+For dynamic UIs:
+- re-query elements after re-render
+- tolerate delayed rendering and overlays
+- verify visibility and enabled state before acting
+- use retries where appropriate
+
+==================================================
+SVG / CANVAS REQUIREMENTS
+==================================================
+
+If the seat map is SVG:
+- inspect node types, labels, grouping, attributes, transforms, and event handlers
+- identify how rows and seat numbers are encoded
+- determine whether seats can be clicked directly or through overlays
+
+If the seat map is canvas:
+- inspect surrounding DOM, legends, hover layers, side panels, tooltips, and network payloads
+- use cursor movement, hover, bounding-box probing, and auxiliary UI signals where necessary
+- do not assume canvas seats are inaccessible; infer state through nearby UI and events
+
+If both exist:
+- document which layer is authoritative for detection vs interaction
+
+==================================================
+CODE GENERATION REQUIREMENTS
+==================================================
+
+When implementing code, prefer reusable architecture over single-run scripts.
+
+Expected outcomes:
+
+1. TS SIDE
+- add or update reusable modules under `Playwright_TS/`
+- if true TypeScript is introduced, add only the minimum safe toolchain required
+- otherwise keep the code TS-ready and modular
+- preserve compatibility with the existing project structure where possible
+
+2. JAVA SIDE
+- add or update reusable classes under `playwright_java_tickets/src/main/java/com/ticketautomation/`
+- align Java flow with the same business rules used on the TS side
+- keep selectors and interaction strategy maintainable and discoverable
+
+3. CONFIG
+- externalize values so future matches can be run by config change rather than prompt rewrite
+- keep these configurable:
+  - match teams / display name
+  - preferred stands in priority order
+  - row preference
+  - required consecutive seats
+  - monitoring duration / polling
+  - retry windows
+  - login settings
+  - payment settings including UPI_ID
+  - session paths
+  - artifact paths
+  - Telegram settings
+
+5. CONTINUITY
+- update `CHANGE_TRACKER.md` after code changes
+- document what was changed, what remains flexible, and what the next run should verify
+
+4. DOCUMENTATION
+- update run instructions after code generation
+- explain how to adapt for future matches
+- explain how to run in debug/headed mode for locator re-discovery after UI changes
+
+==================================================
+DEBUG / INSPECTION SUPPORT
+==================================================
+
+When creating or updating code, make it easy to inspect the live site.
+
+Include support for:
+- headed mode
+- optional slow motion or debug waits
+- screenshots at important checkpoints
+- logs for locator decisions
+- artifact capture for failures
+- easy temporary toggles for exploratory runs
+
+If the live UI changes later, the code should be easy to re-run in discovery mode to repair selectors or interaction logic.
+
+==================================================
+IMPLEMENTATION SAFETY RULES
+==================================================
+
+- never claim success without verifying the UI state
+- do not fabricate selectors, stand structures, or seat map rules
+- if the UI is missing, incomplete, or changed, report exactly what is missing
+- prefer partial scaffolding plus documented unknowns over fake completion
+- automate payment only when the live checkout/payment UI is confirmed and configuration-driven values are available
+- stop at cart / manual checkout as required by `prompt.txt`
+- if one account reaches cart or payment, do not automatically stop the remaining accounts unless explicitly configured later
+- if payment automation is implemented later, prefer reading UPI ID from configuration/environment rather than hardcoding it in logic
+
+==================================================
+OUTPUT EXPECTATIONS FOR EACH FUTURE AUTHORING RUN
+==================================================
+
+At the end of a future authoring session, produce:
+
+1. DISCOVERY SUMMARY
+- what parts of the UI were available
+- what locators and interaction patterns were confirmed
+- what remains unknown
+
+2. CODE CHANGES
+- files created or updated in TS project
+- files created or updated in Java project
+- config changes introduced
+- any updates made to `CHANGE_TRACKER.md`
+
+3. RISK NOTES
+- fragile areas
+- assumptions requiring future verification
+- seat-map-specific challenges
+
+4. RUN INSTRUCTIONS
+- how to run TS implementation
+- how to run Java implementation
+- how to launch headed debug mode for future inspection
+
+==================================================
+EXECUTION STYLE
+==================================================
+
+Be methodical.
+Inspect first, implement second.
+Prefer verified facts over guesses.
+Use `prompt.txt` as the requirement source.
+Turn the repository into a reusable automation framework for future matches.
