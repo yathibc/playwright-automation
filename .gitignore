@@ -34,6 +34,8 @@ Playwright_TS/target/test-classes/
 Playwright_TS/screenshots/
 Playwright_TS/sessions/
 Playwright_TS/logs/
+screenshots/
+playwright_java_tickets/
 
 # General temporary files
 *.tmp
