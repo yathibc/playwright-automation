@@ -31,7 +31,17 @@ class BrowserManager {
       this.browser = await chromium.launch({
         headless: config.browser.headless,
         slowMo: config.debug.slowMo,
-        args: ['--start-maximized', '--disable-blink-features=AutomationControlled']
+        args: [
+          '--start-maximized',
+          '--disable-blink-features=AutomationControlled',
+          '--disable-infobars',
+          '--no-first-run',
+          '--no-default-browser-check',
+          '--disable-dev-shm-usage',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding'
+        ]
       });
 
       const contextOptions = {
@@ -49,6 +59,7 @@ class BrowserManager {
       this.context = await this.browser.newContext(contextOptions);
 
       await this.restoreSessionStorageInitScript();
+      await this.applyStealthScripts();
 
       this.page = await this.context.newPage();
       await this.setupEventListeners();
@@ -78,6 +89,46 @@ class BrowserManager {
       logger.info(`Loaded sessionStorage init script from ${this.sessionStorageFile}`);
     } catch (error) {
       logger.warn(`Unable to restore sessionStorage: ${error.message}`);
+    }
+  }
+
+  async applyStealthScripts() {
+    try {
+      await this.context.addInitScript(() => {
+        // Hide navigator.webdriver (safe — does not affect reCAPTCHA)
+        Object.defineProperty(navigator, 'webdriver', {
+          get: () => false,
+          configurable: true
+        });
+
+        // Emulate chrome runtime object (present in real Chrome, absent in automation)
+        if (!window.chrome) {
+          window.chrome = {};
+        }
+        if (!window.chrome.runtime) {
+          window.chrome.runtime = {
+            connect: () => { },
+            sendMessage: () => { }
+          };
+        }
+
+        // Emulate realistic languages (safe — does not affect reCAPTCHA)
+        Object.defineProperty(navigator, 'languages', {
+          get: () => ['en-US', 'en'],
+          configurable: true
+        });
+
+        // Hide Playwright-specific properties
+        delete window.playwright;
+        delete window.__pw_manual;
+
+        // NOTE: navigator.plugins override and navigator.permissions.query patch
+        // were removed because they break Google reCAPTCHA v3 validation.
+        // reCAPTCHA checks plugin consistency and permissions API integrity.
+      });
+      logger.info('Stealth anti-detection scripts applied');
+    } catch (error) {
+      logger.warn(`Failed to apply stealth scripts: ${error.message}`);
     }
   }
 
@@ -124,18 +175,18 @@ class BrowserManager {
   async waitForPageReady(timeout = Math.min(5000, config.website.navigationTimeout)) {
     try {
       await this.page.waitForLoadState('domcontentloaded', { timeout });
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       await this.page.waitForFunction(
         () => document.readyState === 'interactive' || document.readyState === 'complete',
         { timeout }
       );
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       await this.page.waitForTimeout(250);
-    } catch (_) {}
+    } catch (_) { }
 
     return true;
   }
@@ -156,7 +207,7 @@ class BrowserManager {
       try {
         const el = this.page.locator(selector).first();
         if (await el.isVisible()) return el;
-      } catch (_) {}
+      } catch (_) { }
     }
     return null;
   }
@@ -195,7 +246,7 @@ class BrowserManager {
       const screenshotPath = path.join(config.debug.screenshotPath, filename);
       if (!fs.existsSync(config.debug.screenshotPath)) fs.mkdirSync(config.debug.screenshotPath, { recursive: true });
       await this.page.screenshot({ path: screenshotPath, fullPage: true });
-    } catch (_) {}
+    } catch (_) { }
   }
 
   async close() {

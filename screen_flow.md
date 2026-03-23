@@ -59,15 +59,16 @@ Each enabled account should get its own browser, session files, screenshots, and
 - Priority order:
   1. any 2 consecutive seats in `C Stand`
   2. if unavailable, any 2 consecutive seats in `B Stand`
+- Note the current seat selection page url before attempting to select seats
 
 ## 8. Retry On Occupied Seat
 - After selecting seats and clicking **Next**, if flow fails because seats are already occupied / unavailable / rejected, retry.
 - Retry within same stand first.
 - Re-scan seat availability and select a new valid pair.
-- Continue until navigation reaches the next page or options are exhausted.
+- Continue until navigation reaches the next page or until the current url is not the noted seat selection page url (the url is changed).
 
 ## 9. Cart State / Checkout
-- Add to Bag.
+- Add to Bag (this step is optional, as clicking next does it after seat selection).
 - Go to Bag.
 - Any monitoring strategy that succeeds in seat selection must use the same checkout continuation path.
 - Do not stop other account/browser sessions if one account already reached cart.

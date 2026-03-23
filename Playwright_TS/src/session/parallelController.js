@@ -240,18 +240,14 @@ class ParallelSessionController {
     let attempt = 0;
     while (this.isRunning && this.hasTimeLeft(session)) {
       attempt += 1;
-      
+
       try {
-        const matchFound = await session.matchDetector.searchForMatch();
-        if (matchFound) {
-          const seatSuccess = await this.processSeatSelection(session);
-          if (seatSuccess) {
-            return true;
-          }
+        const seatSuccess = await this.processSeatSelection(session);
+        if (seatSuccess) {
+          return true;
         }
-        
+
         await session.browser.page.waitForTimeout(Math.min(config.monitoring.pollIntervalMs, this.getRemainingMs(session)));
-        
         if (attempt % 30 === 0) {
           logger.info(`Session ${session.id} polling attempt ${attempt}, remaining ${Math.ceil(this.getRemainingMs(session) / 1000)}s`);
         }
@@ -259,7 +255,7 @@ class ParallelSessionController {
         logger.debug(`Polling attempt ${attempt} failed for session ${session.id}: ${error.message}`);
       }
     }
-    
+
     return false;
   }
 
@@ -270,26 +266,197 @@ class ParallelSessionController {
         return false;
       }
 
-      const seatMapLoaded = await session.seatMapDetector.waitForSeatMapLoad();
-      if (!seatMapLoaded) {
-        logger.warn(`Seat map failed to load in session ${session.id}`);
-        return false;
-      }
-
-      const seatMap = await session.seatMapDetector.detectAndInitializeSeatMap();
-      if (!seatMap) {
-        logger.warn(`Could not initialize seat map in session ${session.id}`);
-        return false;
-      }
-
-      return await this.completeSeatSelectionAndCheckout(session, seatMap, {
-        sourceLabel: 'standard seat selection flow'
-      });
-
+      return await this.attemptMatchBookingFlow(session);
     } catch (error) {
       logger.error(`Seat selection failed in session ${session.id}: ${error.message}`);
       return false;
     }
+  }
+
+  async attemptMatchBookingFlow(session) {
+    const matchUrl = config.match.matchUrl;
+    const maxAttempts = config.seats.matchRetryAttempts;    
+    let attempt = 0;
+
+    while (attempt < maxAttempts && this.hasTimeLeft(session)) {
+      attempt += 1;
+      logger.info(`Session ${session.id} booking attempt ${attempt}/${maxAttempts} at ${matchUrl}`);
+
+      const navigated = await this.goToMatchPage(session, matchUrl);
+      if (!navigated) continue;
+
+      await this.clickContinuePopup(session);
+
+      const stand = await this.selectStandForMatch(session);
+      if (!stand) continue;
+
+      const ticketsSelected = await this.selectTicketCount(session, config.seats.requiredConsecutiveSeats || 2);
+      if (!ticketsSelected) continue;
+
+      const continued = await this.clickMatchContinue(session);
+      if (!continued) continue;
+
+      const seatMapLoaded = await session.seatMapDetector.waitForSeatMapLoad();
+      if (!seatMapLoaded) {
+        logger.warn(`Seat map failed to load after match navigation in session ${session.id}`);
+        continue;
+      }
+
+      const seatMap = await session.seatMapDetector.detectAndInitializeSeatMap();
+      if (!seatMap) {
+        logger.warn(`Unable to initialize seat map after selecting stand in session ${session.id}`);
+        continue;
+      }
+
+      const selectionResult = await session.seatSelector.runStandSeatFlow(stand, seatMap);
+      if (!selectionResult.success) {
+        logger.warn(`Seat selection could not complete (${selectionResult.reason || 'unknown'}) in session ${session.id}`);
+        continue;
+      }
+
+      try {
+        return await session.checkoutFlow.runFromCurrentPage();
+      } catch (error) {
+        logger.error(`Checkout flow failed in session ${session.id}: ${error.message}`);
+        continue;
+      }
+    }
+
+    return false;
+  }
+
+  async goToMatchPage(session, matchUrl) {
+    try {
+      await session.browser.page.goto(matchUrl, {
+        waitUntil: 'domcontentloaded',
+        timeout: config.website.navigationTimeout
+      });
+      await session.browser.waitForPageReady();
+      await session.browser.page.waitForTimeout(750);
+      return true;
+    } catch (error) {
+      logger.warn(`Failed to navigate to match URL in session ${session.id}: ${error.message}`);
+      return false;
+    }
+  }
+
+  async clickContinuePopup(session) {
+    try {
+      const continueBtn = await session.browser.waitForAnyVisible([
+        "xpath=//button/../*[contains(text(),'Continue')]",
+        "button:has-text('Continue')",
+        "button:has-text('Proceed')"
+      ], 2500, 200);
+
+      if (continueBtn) {
+        await continueBtn.click();
+        await session.browser.page.waitForTimeout(400);
+        return true;
+      }
+    } catch (error) {
+      logger.debug(`Continue popup handling failed in session ${session.id}: ${error.message}`);
+    }
+
+    return false;
+  }
+
+  async selectStandForMatch(session) {
+    try {
+      const standLocators = await session.browser.page.locator("xpath=//p[text()='CATEGORY']/following-sibling::div[1]/div/div/p[1]").all();
+      if (!standLocators.length) {
+        logger.warn(`No stand options found in session ${session.id}`);
+        return null;
+      }
+
+      const standPreferences = this.getStandPreferences(session);
+
+      const standEntries = [];
+      for (const locator of standLocators) {
+        const text = ((await locator.textContent()) || '').trim();
+        if (text) {
+          standEntries.push({ text, locator });
+        }
+      }
+
+      for (const preference of standPreferences) {
+        const normalizedPreference = preference?.toLowerCase();
+        if (!normalizedPreference) continue;
+
+        for (let i = standEntries.length - 1; i >= 0; i -= 1) {
+          const stand = standEntries[i];
+          if (stand.text.toLowerCase().includes(normalizedPreference)) {
+            await stand.locator.click();
+            await session.browser.page.waitForTimeout(400);
+            logger.info(`Selected stand ${stand.text} for session ${session.id}`);
+            return stand.text;
+          }
+        }
+      }
+
+      const fallbackStand = standEntries[standEntries.length - 1];
+      await fallbackStand.locator.click();
+      await session.browser.page.waitForTimeout(400);
+      logger.info(`Defaulted to stand ${fallbackStand.text} for session ${session.id}`);
+      return fallbackStand.text;
+    } catch (error) {
+      logger.warn(`Stand selection failed in session ${session.id}: ${error.message}`);
+      return null;
+    }
+  }
+
+  getStandPreferences(session) {
+    const account = session.account || {};
+    const preferences = [
+      account.preferredStand,
+      account.fallbackStand,
+      config.seats.preferredStand,
+      config.seats.fallbackStand
+    ].filter(Boolean);
+
+    return [...new Set(preferences.map((p) => p.trim()))];
+  }
+
+  async selectTicketCount(session, quantity) {
+    try {
+      const section = session.browser.page.locator("xpath=//p[text()='How many tickets?']/following-sibling::div[2]").first();
+      if (!section) return false;
+      const buttons = await section.locator('button').all();
+
+      for (const button of buttons) {
+        const text = ((await button.textContent()) || '').trim();
+        if (!text) continue;
+
+        if (text === String(quantity) || text.toLowerCase().includes(String(quantity))) {
+          await button.click();
+          await session.browser.page.waitForTimeout(300);
+          return true;
+        }
+      }
+    } catch (error) {
+      logger.warn(`Ticket count selection failed in session ${session.id}: ${error.message}`);
+    }
+
+    return false;
+  }
+
+  async clickMatchContinue(session) {
+    try {
+      const continueBtn = await session.browser.waitForAnyVisible([
+        "button:has-text('Continue')",
+        "button:has-text('Proceed')",
+        "button:has-text('Next')"
+      ], 2500, 200);
+
+      if (continueBtn) {
+        await continueBtn.click();
+        await session.browser.page.waitForTimeout(600);
+        return true;
+      }
+    } catch (error) {
+      logger.warn(`Failed to click continue button in session ${session.id}: ${error.message}`);
+    }
+
+    return false;
   }
 
   async completeSeatSelectionAndCheckout(session, seatMap, options = {}) {

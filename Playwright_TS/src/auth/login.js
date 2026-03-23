@@ -14,7 +14,7 @@ class LoginManager {
     try {
       const currentUrl = this.browser.page.url().toLowerCase();
 
-      if (currentUrl.includes('/auth?callbackurl=/rcbian')) {
+      if (currentUrl.includes('/auth?callbackurl')) {
         return 'phone_required';
       }
 

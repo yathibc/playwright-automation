@@ -58,6 +58,8 @@ const config = {
     fallbackStand: process.env.FALLBACK_STAND || 'B Stand',
     requiredConsecutiveSeats: parseInt(process.env.REQUIRED_CONSECUTIVE_SEATS) || 2,
     retryOccupiedSeatMinutes: parseInt(process.env.RETRY_OCCUPIED_SEAT_MINUTES) || 5
+    ,
+    matchRetryAttempts: parseInt(process.env.MATCH_RETRY_ATTEMPTS) || 12
   },
   
   sessions: {
@@ -76,6 +78,7 @@ const config = {
   },
   
   match: {
+    matchUrl: process.env.MATCH_URL || 'https://shop.royalchallengers.com/ticket/2',
     displayName: process.env.MATCH_DISPLAY_NAME || 'RCB vs SRH',
     keywords: {
       team1: ['RCB', 'Bangalore', 'Royal Challengers'],
