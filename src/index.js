@@ -122,7 +122,7 @@ class TicketAutomationSystem {
         // Initialize other components
         this.matchDetector = new MatchDetector(this.browser);
         this.seatMapDetector = new SeatMapDetector(this.browser);
-        this.seatSelector = new SeatSelector(this.browser);
+        this.seatSelector = new SeatSelector(this.browser, this.account);
         this.checkoutFlow = new CheckoutFlow({browserManager: this.browser, account: this.account});
 
         return true;

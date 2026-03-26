@@ -391,33 +391,6 @@ class SeatMapDetector {
     }
   }
 
-  async findPreferredStand() {
-    const preferredStand = config.seats.preferredStand;
-
-    const standSelectors = [
-      `[data-section="${preferredStand}"]`,
-      `[data-stand="${preferredStand}"]`,
-      `[aria-label*="${preferredStand}"]`,
-      `[title*="${preferredStand}"]`,
-      `.${preferredStand.toLowerCase().replace(' ', '-')}`,
-      `#${preferredStand.toLowerCase().replace(' ', '-')}`
-    ];
-
-    for (const selector of standSelectors) {
-      try {
-        const standElement = await this.browser.page.locator(selector).first();
-        if (await standElement.isVisible()) {
-          logger.info(`Found preferred stand: ${preferredStand}`);
-          return standElement;
-        }
-      } catch (error) {
-        // Continue to next selector
-      }
-    }
-
-    logger.warn(`Preferred stand "${preferredStand}" not found`);
-    return null;
-  }
 }
 
 module.exports = SeatMapDetector;

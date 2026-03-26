@@ -40,12 +40,6 @@ cp .env .env
 ```
 
 3. **Install Playwright Browsers**
-```bash
-npx playwright install chromium
-```
-
-## ⚙️ Configuration
-
 ### Environment Variables (.env)
 
 ```env
@@ -72,9 +66,8 @@ HEADLESS=false
 BROWSER_ZOOM=0.5
 DEBUG_MODE=false
 
-# Seat Preferences
-PREFERRED_STAND=C Stand
-FALLBACK_STAND=B Stand
+### Seat Preferences
+STAND_PRIORITY=BOAT C STAND,C STAND,BOAT B STAND,B STAND
 REQUIRED_CONSECUTIVE_SEATS=2
 MATCH_RETRY_ATTEMPTS=12
 
@@ -98,9 +91,14 @@ CVV=xxx
 
 - **Global Booking Timeout**: Each account flow uses one total timeout budget for the entire booking flow
 - **Target Match**: RCB vs SRH (configurable in `src/config/config.js`)
-- **Preferred Seats**: Choose any 2 consecutive available seats in the preferred stand; if unavailable, try the fallback stand
+- **Seat Stand Priority**: `STAND_PRIORITY` defines the ordered list of stand names the automation attempts (highest priority first)
 - **Optional Match Steps**: "How many tickets" selection and match-page "Continue" are treated as optional when the UI auto-advances
 - **Network Capture**: Session capture starts early in session initialization so login/OTP and booking APIs are both recorded
+- **Parallel Sessions**: One browser flow per enabled account in `accounts.json`
+- **Payment Branching**: UPI or CARD is selected per account (`accounts.json`) or fallback env (`PAYMENT_TYPE`)
+- **Network Capture**: Session capture starts early in session initialization so login/OTP and booking APIs are both recorded
+- **Parallel Sessions**: One browser flow per enabled account in `accounts.json`
+- **Payment Branching**: UPI or CARD is selected per account (`accounts.json`) or fallback env (`PAYMENT_TYPE`)
 - **Parallel Sessions**: One browser flow per enabled account in `accounts.json`
 - **Payment Branching**: UPI or CARD is selected per account (`accounts.json`) or fallback env (`PAYMENT_TYPE`)
 
@@ -218,8 +216,7 @@ match: {
 
 ### Seat Selection Priorities
 
-1. **Priority 1**: any 2 consecutive seats in C Stand
-2. **Priority 2**: if unavailable, repeat the same logic in B Stand
+1. **Priority List**: `STAND_PRIORITY` defines the priority order (e.g., C Stand → B Stand)
 
 ### Multi-Account Strategy
 

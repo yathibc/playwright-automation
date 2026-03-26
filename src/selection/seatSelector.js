@@ -4,8 +4,25 @@ const config = require('../config/config');
 const logger = createModuleLogger('SeatSelector');
 
 class SeatSelector {
-  constructor(browserManager) {
+  constructor(browserManager, account = {}) {
     this.browser = browserManager;
+    this.account = account;
+  }
+
+  getStandPriorityList() {
+    const accountPriority = Array.isArray(this.account?.standPriority)
+      ? this.account.standPriority.map(entry => (entry || '').trim()).filter(Boolean)
+      : [];
+
+    if (accountPriority.length) {
+      return accountPriority;
+    }
+
+    const globalPriority = Array.isArray(config.seats.standPriority)
+      ? config.seats.standPriority
+      : [];
+
+    return globalPriority;
   }
 
   buildSeatSelectionResult(selectedPair, strategy) {
@@ -21,21 +38,51 @@ class SeatSelector {
   async selectConsecutiveSeats(seatMap) {
     logger.info('Starting consecutive seat selection...');
 
-    const preferredPairs = this.findPairsByStandPriority(seatMap.seats, config.seats.preferredStand);
-    let selectedPair = preferredPairs[0] || null;
+    const desiredStandOrder = this.getStandPriorityList();
+    const attemptedStands = new Set();
+    let selectedPair = null;
+    let selectedStandName = null;
 
-    if (!selectedPair) {
-      const fallbackPairs = this.findPairsByStandPriority(seatMap.seats, config.seats.fallbackStand);
-      selectedPair = fallbackPairs[0] || null;
+    const tryStand = (standName) => {
+      if (!standName) return false;
+      const pairs = this.findPairsByStandPriority(seatMap.seats, standName);
+      if (pairs.length) {
+        selectedPair = pairs[0];
+        selectedStandName = standName;
+        return true;
+      }
+      attemptedStands.add(standName.toLowerCase());
+      return false;
+    };
+
+    for (const standName of desiredStandOrder) {
+      if (tryStand(standName)) break;
     }
 
     if (!selectedPair) {
-      logger.warn(`No 2 consecutive seats found in ${config.seats.preferredStand} or ${config.seats.fallbackStand}`);
+      const availableStandNames = Array.from(new Set(
+        (seatMap.seats || [])
+          .map(seat => seat.stand)
+          .filter(Boolean)
+          .map(st => st.toLowerCase())
+      ));
+
+      for (const normalizedStand of availableStandNames) {
+        if (attemptedStands.has(normalizedStand)) continue;
+        const standName = (seatMap.seats || []).find(seat =>
+          seat.stand && seat.stand.toLowerCase() === normalizedStand
+        )?.stand;
+        if (standName && tryStand(standName)) break;
+      }
+    }
+
+    if (!selectedPair) {
+      logger.warn(`No ${config.seats.requiredConsecutiveSeats || 2} consecutive seats found in preferred stands: ${desiredStandOrder.join(', ')}`);
       return null;
     }
 
     logger.info(`Selected pair: ${selectedPair[0].row}${selectedPair[0].number}
-     & ${selectedPair[1].row}${selectedPair[1].number}`);
+     & ${selectedPair[1].row}${selectedPair[1].number} (Stand: ${selectedPair[0].stand || selectedStandName || 'unknown'})`);
 
     const success = await this.selectSeats(selectedPair, seatMap.selectSeat);
 

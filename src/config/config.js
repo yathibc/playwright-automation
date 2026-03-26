@@ -4,21 +4,35 @@ const fs = require('fs');
 
 dotenv.config();
 
+function parseStandPriority(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.map(v => (v || '').trim()).filter(Boolean);
+  }
+  return value.toString().split(',').map(v => v.trim()).filter(Boolean);
+}
+
+const DEFAULT_STAND_PRIORITY = parseStandPriority(
+  process.env.STAND_PRIORITY || 'BOAT C STAND,C STAND,BOAT B STAND,B STAND'
+);
+
 function loadAccounts() {
   try {
-    const accountsPath = path.join(__dirname, '../../../accounts.json');
+    const accountsPath = path.join(__dirname, '../../accounts.json');
     if (fs.existsSync(accountsPath)) {
       const parsed = JSON.parse(fs.readFileSync(accountsPath, 'utf-8'));
       const enabledAccounts = (parsed.accounts || []).filter(account => account && account.enabled !== false);
       if (enabledAccounts.length) {
-        return enabledAccounts.map((account, index) => ({
-          id: account.id || `acc${index + 1}`,
-          phone: account.phone || process.env.LOGIN_PHONE || '7899179393',
-          enabled: account.enabled !== false,
-          preferredStand: account.preferredStand || process.env.PREFERRED_STAND || 'C Stand',
-          fallbackStand: account.fallbackStand || process.env.FALLBACK_STAND || 'B Stand',
-          paymentType: String(account.paymentType || process.env.PAYMENT_TYPE || 'UPI').toUpperCase()
-        }));
+        return enabledAccounts.map((account, index) => {
+          const standPriority = parseStandPriority(account.standPriority);
+          return {
+            id: account.id || `acc${index + 1}`,
+            phone: account.phone || process.env.LOGIN_PHONE || '7899179393',
+            enabled: account.enabled !== false,
+            standPriority: standPriority.length ? standPriority : null,
+            paymentType: String(account.paymentType || process.env.PAYMENT_TYPE || 'UPI').toUpperCase()
+          };
+        });
       }
     }
   } catch (_) {}
@@ -27,8 +41,7 @@ function loadAccounts() {
     id: 'acc1',
     phone: process.env.LOGIN_PHONE || '7899179393',
     enabled: true,
-    preferredStand: process.env.PREFERRED_STAND || 'C Stand',
-    fallbackStand: process.env.FALLBACK_STAND || 'B Stand',
+    standPriority: null,
     paymentType: String(process.env.PAYMENT_TYPE || 'UPI').toUpperCase()
   }];
 }
@@ -86,11 +99,8 @@ const config = {
 
   // ── Seat selection ──────────────────────────────────────────────────
   seats: {
-    preferredStand: process.env.PREFERRED_STAND || 'C Stand',
-    fallbackStand: process.env.FALLBACK_STAND || 'B Stand',
-    // Ordered priority list of stands to try (preferred first, then fallbacks)
-    standPriority: (process.env.STAND_PRIORITY || 'BOAT C STAND,C STAND,BOAT B STAND,B STAND')
-        .split(',').map(s => s.trim()),
+    // Ordered priority list of stands to try (first entry is highest preference)
+    standPriority: DEFAULT_STAND_PRIORITY,
     requiredConsecutiveSeats: parseInt(process.env.REQUIRED_CONSECUTIVE_SEATS) || 2,
     retryOccupiedSeatMinutes: parseInt(process.env.RETRY_OCCUPIED_SEAT_MINUTES) || 5,
     matchRetryAttempts: parseInt(process.env.MATCH_RETRY_ATTEMPTS) || 12,

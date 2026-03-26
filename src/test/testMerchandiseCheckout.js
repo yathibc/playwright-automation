@@ -21,8 +21,7 @@ async function runMerchandiseCheckoutTest() {
     id: 'acc1',
     phone: config.website.loginPhone,
     enabled: true,
-    preferredStand: config.seats.preferredStand,
-    fallbackStand: config.seats.fallbackStand,
+    standPriority: config.seats.standPriority,
     paymentType: 'CARD'
   };
 

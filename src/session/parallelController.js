@@ -49,7 +49,7 @@ class ParallelSessionController {
         browserManager,
         account
       });
-      const seatSelector = new SeatSelector(browserManager);
+      const seatSelector = new SeatSelector(browserManager, account);
       const eventMonitor = new EventMonitor(browserManager, matchDetector, seatMapDetector,
           seatSelector, checkoutFlow);
 
@@ -153,8 +153,9 @@ class ParallelSessionController {
   }
 
   async monitorSession(session) {
-    logger.info(`Session ${session.id} monitoring preferred stand ${session.account?.preferredStand
-    || config.seats.preferredStand}`);
+    const priorityList = this.getStandPriorityList(session);
+    const priorityLabel = priorityList.length ? priorityList.join(' → ') : 'any available stand';
+    logger.info(`Session ${session.id} monitoring priority stands: ${priorityLabel}`);
 
     const monitoringStrategies = [
       () => this.monitorEventDriven(session),
@@ -595,16 +596,18 @@ class ParallelSessionController {
     }
   }
 
-  getStandPreferences(session) {
-    const account = session.account || {};
-    const preferences = [
-      account.preferredStand,
-      account.fallbackStand,
-      config.seats.preferredStand,
-      config.seats.fallbackStand
-    ].filter(Boolean);
+  getStandPriorityList(session) {
+    const accountPriority = session?.account?.standPriority;
+    if (Array.isArray(accountPriority) && accountPriority.length) {
+      return accountPriority.filter(p => (p || '').trim()).map(p => p.trim());
+    }
+    const globalPriority = Array.isArray(config.seats.standPriority) ? config.seats.standPriority : [];
+    return globalPriority.filter(p => (p || '').trim()).map(p => p.trim());
+  }
 
-    return [...new Set(preferences.map((p) => p.trim()))];
+  getStandPreferences(session) {
+    const preferences = this.getStandPriorityList(session);
+    return [...new Set(preferences)];
   }
 
   async selectTicketCount(session, quantity) {
