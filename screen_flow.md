@@ -1,116 +1,147 @@
-# Ticket Automation Screen Flow Skeleton
+# RCB Ticket Automation — Screen Flow (v2.0 API-First Hybrid)
 
-This file captures the expected end-to-end screen flow that both the TS and Java projects should implement now as a reusable skeleton.
+## Architecture
+- **API-first**: Uses direct API calls for event discovery and data fetching
+- **Browser UI**: Only for login (OTP), seat clicking (Konva canvas), checkout, payment
+- **Speed target**: Complete booking in <2 minutes (tickets sell out fast)
+- **All timeouts config-based**: No hardcoded waits anywhere
 
-This flow supports multiple accounts / multiple browser sessions.
-Each enabled account should get its own browser, session files, screenshots, and runtime state.
+---
 
-## 1. Startup / Session Restore
-- Launch browser in headed mode.
-- Open `https://shop.royalchallengers.com`.
-- If present, load per-account session files:
-  - `sessions/<account_id>/user_session.json`
-  - `sessions/<account_id>/session_storage.json`
-- Reload after restore so authenticated state is reflected.
-- Start observing UI and network/backend changes.
+## Phase 1: Login & Token Extraction (~30s, mostly OTP wait)
 
-## 2. Login Validation
-- Click profile icon.
-- Click **My Account**.
-- Treat user as logged in only if My Account page loads and profile/details are visible.
+1. **Open** `https://shop.royalchallengers.com`
+2. **Detect auth state**: Check if already logged in via saved session
+3. **If not logged in**: Enter phone number → Click "Continue" → Wait for manual OTP entry
+4. **OTP timeout**: `config.timeouts.otpWaitMinutes` (default 5 min)
+5. **After login**: Extract `rtokn` cookie from browser context for API auth
+6. **Save session**: storageState + sessionStorage for reuse
 
-## 3. OTP Login Flow
-- If not logged in for the current account/browser:
-  - enter `7899179393`
-  - click **Next**
-  - pause up to 5 minutes for manual OTP entry
-  - resume automatically when authenticated state is detected
-- Save both per-account session files only after successful login.
-- If restored session was invalid, overwrite saved files only after fresh successful login.
+---
 
-## 4. Match Discovery
-- Search for `RCB vs SRH`.
-- Detect using both UI changes and backend/network changes.
-- After login/session restore is confirmed, start recording backend network requests/responses to JSON and HAR artifacts for later analysis.
-- All stages in the booking flow share one total booking timeout per account/browser.
-- Example: if total timeout is 10 minutes and match discovery consumes 7 minutes, all remaining stages together get only the remaining 3 minutes.
-- If match not found, take screenshot, log reason, keep browser open.
+## Phase 2: Event Discovery — API Polling (~0-3s per poll)
 
-## Global Timeout Rule
-- Timeout is global for the full booking flow of each account/browser.
-- Do not reset timeout per step.
-- Every stage must use remaining time only.
+7. **API call**: `GET https://rcbscaleapi.ticketgenie.in/ticket/eventlist/O`
+  - Auth: `Authorization: Bearer {rtokn}`
+  - Response: `{ status: "Success", result: [{ event_Code, event_Group_Code, event_Name, event_Button_Text, ... }] }`
+8. **Match criteria**: `event_Name` contains both target teams AND `event_Button_Text === "BUY TICKETS"`
+9. **If not found**: Wait `config.api.pollIntervalMs` (3s) → retry
+10. **If found**: Extract `event_Code`, `event_Group_Code` → proceed to Phase 3
+11. **Timeout**: `config.timeouts.eventPollMinutes` (default 60 min)
 
-## Parallel Startup Rule
-- All enabled account/browser flows should launch immediately in parallel.
-- Do not wait for one browser to finish login or session validation before starting the others.
+---
 
-## 5. Availability Check
-- Check whether tickets are available.
-- If unavailable, take screenshot, log reason, keep browser open.
+## Phase 3: Navigate to Event Page (~2s)
 
-## 6. Stand Selection Priority
-- Try `C Stand` first.
-- If unavailable, try `B Stand`.
-- If neither available, stop, notify, screenshot, log reason, keep browser open.
+12. **Navigate** to `https://shop.royalchallengers.com/ticket/{event_Code}` (domcontentloaded)
+13. **Apply browser zoom** to 50% (`document.body.style.zoom = '0.5'`) so entire stand view fits
+14. **Start Konva interceptor** BEFORE any stand interaction (captures seat-template + seatlist)
+15. **Dismiss "Continue" popup** if terms/info modal appears
 
-## 7. Seat Selection Priority
-- Need exactly 2 consecutive seats in the same stand.
-- Priority order:
-  1. any 2 consecutive seats in `C Stand`
-  2. if unavailable, any 2 consecutive seats in `B Stand`
-- Note the current seat selection page url before attempting to select seats
+---
 
-## 8. Retry On Occupied Seat
-- After selecting seats and clicking **Next**, if flow fails because seats are already occupied / unavailable / rejected, retry.
-- Retry within same stand first.
-- Re-scan seat availability and select a new valid pair.
-- Continue until navigation reaches the next page or until the current url is not the noted seat selection page url (the url is changed).
+## Phase 4: Stand Selection (~1s per stand)
 
-## 9. Cart State / Checkout
-- Add to Bag (this step is optional, as clicking next does it after seat selection).
-- Go to Bag.
-- Any monitoring strategy that succeeds in seat selection must use the same checkout continuation path.
-- Do not stop other account/browser sessions if one account already reached cart.
-- Let other accounts continue trying to add their own tickets to cart.
+16. **For each stand** in `config.seats.standPriority` (e.g., BOAT C STAND → C STAND → BOAT B STAND → B STAND):
+  - Click stand using XPath: `//p[text()='CATEGORY']/following-sibling::div[1]//p[text()="{standName}"]`
+  - This opens the seat map modal (Konva canvas)
+17. **Select ticket count**: Click the number button (e.g., "2") in "How many tickets?" section
+18. **Click "Continue"** to proceed to seat map view
+19. **Wait for intercepted data**: seat-template (S3 JSON) + seatlist (API response)
+  - Timeout: `config.timeouts.seatDataInterceptMs` (default 10s)
 
-## 9a. Payment Automation
-- Payment flow should use config-driven values only.
-- Do not embed merchandise-specific runtime assumptions into reusable code; only reuse the shared checkout/payment structure.
-- If payment method is `UPI`:
-  - select `UPI`
-  - enter configured `UPI_ID`
-  - click `VERIFY AND PAY`
-  - wait for manual approval completion
-- If payment method is `CARD`:
-  - select `Cards`
-  - enter configured card number, expiry, and CVV
-  - click `PAY NOW`
-  - wait up to 5 minutes for manual OTP / 3DS completion
+---
 
-## 9b. Current Confirmed Shared Checkout Structure
-- Checkout exposes `First name`, `Last name`, `Mobile No`, `Email`
-- Shipping exposes `Address (House no. / Building)`, `Locality (Area / Street)`, optional `Landmark`, `Pincode`, `City`, `State`
-- `PAY NOW` transitions to Juspay
-- Juspay currently exposes `Cards`, `UPI`, `Netbanking`, and `Wallets`
+## Phase 5: Seat Calculation & Selection — Konva Canvas (~1s)
 
-## 10. Failure State Handling
-For any of these:
-- session invalid and OTP not completed
-- match not found
-- tickets unavailable
-- stand unavailable
-- no 2 consecutive seats
-- retries exhausted
+20. **KonvaSeatMapResolver**: Merge seat-template (layout) with seatlist (availability)
+  - Filter: `status === 'O'` (Open) AND `bucket === pool` (Online)
+  - Calculate Konva internal coordinates using reverse-engineered algorithm
+  - Find N consecutive available seats in same row
+21. **Convert to browser coordinates**: Account for canvas bounding rect + Konva stage scale + drag offset + 50% browser zoom
+22. **Click each seat** on canvas: `page.mouse.click(browserX, browserY)`
+23. **Click "Proceed"** button
 
-Do:
-- screenshot
-- log exact reason
-- keep browser open for manual review
+---
 
-## 11. Autonomous Maintenance Later
-When the live ticket/seat UI changes or becomes available:
-- use Playwright MCP in headed mode
-- compare actual screens with this expected flow
-- patch locators and interaction logic in TS and Java code
-- preserve the same high-level screen flow
+## Phase 6: Handle ticketaddtocart Response (~0s, event-driven)
+
+24. **Intercept** `checkout/ticketaddtocart` response via `page.waitForResponse()`
+25. **Parse response**:
+
+| Response | Action |
+|----------|--------|
+| `status === "Success"` | ✅ Proceed to Phase 7 (addon/checkout) |
+| `message === "SEAT NOT AVAILABLE"` | 🔄 Re-fetch seatlist, pick new seats → retry Phase 5 (same stand) |
+| `message === "STAND LIMIT EXCEEDED"` | 🔄 Try next stand → retry Phase 4 |
+| `message === "MATCH LIMIT EXCEEDED"` | 🛑 Hard stop — log error, screenshot |
+| `message === "TRANS LIMIT EXCEEDED"` | 🛑 Hard stop |
+| `message === "PROFILE LIMIT EXCEEDED"` | 🛑 Hard stop |
+| `message === "USER LIMIT EXCEEDED"` | 🛑 Hard stop |
+| `message === "OVER LIMIT"` | 🛑 Hard stop |
+
+---
+
+## Phase 7: Addon Selection (Metro/Parking) (~1s)
+
+26. **Check** if addon modal appears (from `index.js`: `s.addon == "Y" ? I.onOpen() : T("/checkout")`)
+27. **If addon modal**:
+  - Click "Free Metro Ticket" radio option
+  - Do NOT select "Paid Parking"
+  - Click "Continue"
+28. **If no addon modal**: App auto-navigates to `/checkout`
+29. **Wait for** URL to contain `/checkout`
+
+---
+
+## Phase 8: Checkout & Payment (relaxed, 8+ min)
+
+30. **Fill checkout details**: First name, Last name, Email, Gender, Address, Pincode
+31. **Accept terms** checkbox
+32. **Click "PAY NOW"** → Juspay payment gateway (iframe)
+33. **Handle payment**:
+  - **UPI**: Click UPI tab → Fill UPI ID → Click "VERIFY AND PAY"
+  - **Card**: Click Cards tab → Fill card number, expiry, CVV → Click "PAY NOW"
+34. **Wait for payment completion**: Poll URL + body text for success/failure indicators
+  - Timeout: `config.timeouts.paymentWaitMinutes` (default 10 min)
+
+---
+
+## Key API Endpoints
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/ticket/eventlist/O` | GET | Bearer rtokn | List all events |
+| `/ticket/seatlist/{groupCode}/{eventCode}/{standCode}` | GET | Bearer rtokn | Available seats for a stand |
+| `/checkout/ticketaddtocart` | POST | Bearer rtokn | Add selected seats to cart |
+| `/checkout/proceed` | POST | Bearer rtokn | Proceed to payment |
+| `tg3.s3.amazonaws.com/revents/seat-template/{standCode}.json` | GET | None | Seat layout template |
+| `tg3.s3.amazonaws.com/revents/standview/standList.json` | GET | None | Stand list |
+
+---
+
+## Config-Based Timeouts
+
+| Timeout | Config Key | Default | Description |
+|---------|-----------|---------|-------------|
+| Global | `TIMEOUT_MINUTES` | 120 min | Overall execution deadline |
+| OTP | `OTP_WAIT_MINUTES` | 5 min | Manual OTP entry |
+| Event Poll | `EVENT_POLL_MINUTES` | 60 min | How long to poll for event |
+| Seat Retry | `SEAT_RETRY_MINUTES` | 3 min | Retry seat selection per stand |
+| API Response | `API_RESPONSE_TIMEOUT_MS` | 15s | Single API call timeout |
+| Seat Data | `SEAT_DATA_INTERCEPT_MS` | 10s | Wait for seat-template + seatlist |
+| Add to Cart | `ADD_TO_CART_TIMEOUT_MS` | 15s | ticketaddtocart response |
+| Payment | `PAYMENT_WAIT_MINUTES` | 10 min | Manual payment completion |
+| Card OTP | `CARD_OTP_WAIT_MINUTES` | 5 min | Card 3DS/OTP |
+
+---
+
+## Speed Optimizations
+
+- **API-first**: Event discovery via API, not UI scraping
+- **Event-driven waits**: `page.waitForResponse()` instead of polling DOM
+- **No `waitForTimeout()`**: All waits are event-driven or deadline-based
+- **Browser zoom 50%**: Entire stand view visible without scrolling canvas
+- **`domcontentloaded`**: Instead of `networkidle` for navigation
+- **Parallel data**: seat-template + seatlist intercepted simultaneously
+- **Pre-calculated coordinates**: Konva coords computed while UI renders
