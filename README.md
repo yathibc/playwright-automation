@@ -1,77 +1,161 @@
-# 🎟 Ticket Booking Automation System
+# 🎟️ RCB Ticket Automation
 
-A Playwright-based ticket monitoring and booking framework with multi-account browser sessions, dynamic DOM detection, and real-time notifications.
+API-first hybrid ticket monitoring and booking automation built with Node.js and Playwright.
 
-## 🚀 Features
+This project is designed for high-speed ticket drops where seats sell out quickly. It uses direct API polling for event discovery and seat data wherever possible, while still using the browser for the parts that require real UI interaction such as login, Konva/canvas seat clicks, checkout, and payment initiation.
 
-### Core Capabilities
-- **Dynamic DOM Exploration**: Intelligent element detection without relying on static selectors
-- **Multi-Account Parallel Control**: Multiple account/browser sessions can run in parallel using `accounts.json`
-- **Event-Driven Monitoring**: Real-time detection using MutationObserver and network monitoring
-- **Smart Seat Selection**: Consecutive seat algorithm with fallback strategies
-- **Unified Checkout Path**: All successful monitoring strategies continue into the same checkout flow
-- **Per-Account Session Persistence**: Automatic login detection and isolated session saving per account
+## Overview
 
-### Advanced Features
-- **Multi-Format Seat Map Support**: SVG, HTML grid, and Canvas implementations
-- **Debug Mode**: Screenshots, overlays, and detailed logging for troubleshooting
-- **Telegram Notifications**: Real-time alerts for login, tickets-live, stand/seat progress, checkout/payment milestones, and failures
-- **Graceful Error Handling**: Comprehensive error recovery and reporting
+The automation supports:
 
-## 📋 Requirements
+- parallel multi-account execution
+- persisted sessions per account
+- API-based event discovery
+- Konva/canvas seat-map handling
+- stand-priority and consecutive-seat selection
+- checkout automation with per-account overrides
+- Telegram notifications
+- network/HAR capture for later analysis
+
+It is optimized for the Royal Challengers Bengaluru ticketing flow, but much of the structure is reusable for similar browser + API hybrid ticketing workflows.
+
+## What Is Automated vs Manual
+
+### Automated
+- opening the site and restoring saved sessions
+- login state detection
+- event polling via backend APIs
+- target match discovery
+- navigation to the live event page
+- stand selection and ticket-count selection
+- seat selection on Konva/canvas layouts
+- add-to-cart response handling and retry logic
+- checkout form filling
+- payment method selection and payment initiation
+- logging, screenshots, Telegram alerts, and network capture
+
+### Still manual
+- OTP entry during login when session reuse is not available
+- final payment approval / UPI authorization / card OTP / bank confirmation
+
+## Key Features
+
+- **API-first hybrid flow**: uses backend APIs for fast discovery and browser automation only where necessary
+- **Parallel account execution**: one session per enabled account, all racing independently
+- **Per-account persistence**: saved storage/session state under `sessions/<account_id>/`
+- **Seat retry intelligence**: retries new seats or moves to the next stand based on add-to-cart responses
+- **Konva/canvas support**: resolves seat coordinates for canvas-based maps
+- **Config-driven runtime**: timeouts, stands, payment defaults, match criteria, and polling are environment-controlled
+- **Telegram notifications**: startup, login, event found, tickets added, checkout reached, errors, and summary
+- **Network capture artifacts**: JSON and HAR files saved for debugging and reverse engineering
+
+## Project Structure
+
+```text
+src/
+├── index.js                         # Main parallel booking entry point
+├── auth/
+│   └── login.js                     # Session reuse + OTP/login handling
+├── browser/
+│   └── browser.js                   # Playwright/browser lifecycle helpers
+├── config/
+│   └── config.js                    # Env loading + runtime configuration
+├── detection/
+│   ├── matchDetector.js             # API-based event discovery
+│   └── seatMapDetector.js           # Seat-map detection helpers
+├── flows/
+│   ├── checkoutFlow.js              # Ticket checkout flow
+│   └── merchandiseCheckoutFlow.js   # Optional merchandise checkout helper
+├── monitoring/
+│   └── eventMonitor.js              # Legacy/alternate monitoring strategy helpers
+├── notifications/
+│   └── telegram.js                  # Telegram integration
+├── selection/
+│   └── seatSelector.js              # Seat selection logic
+├── session/
+│   └── parallelController.js        # Session preload/monitoring controller utilities
+├── test/
+│   └── ...                          # Manual test/debug scripts
+└── utils/
+    ├── debug.js
+    ├── konvaCanvasInterceptor.js
+    ├── konvaSeatMapResolver.js
+    ├── logger.js
+    ├── networkCapture.js
+    └── timeWindow.js
+```
+
+Other useful files:
+
+- `screen_flow.md` - detailed runtime booking flow documentation
+- `LOCATORS_E2E.md` - locator notes / selector references
+- `data/` - captured sample payloads, seat templates, bundles, and API references
+- `logs/` - application logs and network artifacts
+- `sessions/` - per-account saved session state
+
+## Requirements
 
 - Node.js 16+
-- Chrome/Chromium browser
-- Telegram Bot Token and Chat ID (optional but recommended)
+- npm
+- Playwright-compatible Chromium browser
+- Telegram bot token + chat ID for notifications (optional)
 
-## 🛠 Installation
+## Installation
 
-1. **Clone and Setup**
 ```bash
-git clone <repository-url>
-cd ticket-booking-automation
 npm install
 ```
 
-2. **Configure Environment**
+If Playwright browsers are not installed yet:
+
 ```bash
-cp .env .env
-# Edit .env with your configuration
+npx playwright install
 ```
 
-3. **Install Playwright Browsers**
-### Environment Variables (.env)
+## Configuration
+
+Configuration is loaded from `.env` and optional `accounts.json`.
+
+### 1) `.env`
+
+Example structure:
 
 ```env
-# Telegram Bot Configuration
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
-TELEGRAM_CHAT_ID=your_chat_id_here
+# Telegram
+TELEGRAM_ENABLED=true
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
 
-# Ticket Website + Match Configuration
+# Website / login
 TICKET_URL=https://shop.royalchallengers.com
+LOGIN_PHONE=9876543210
+
+# Match targeting
 MATCH_URL=https://shop.royalchallengers.com/ticket/2
 MATCH_DISPLAY_NAME=RCB vs SRH
 TARGET_TEAM1=Royal Challengers Bengaluru
 TARGET_TEAM2=Sunrisers Hyderabad
 REQUIRED_BUTTON_TEXT=BUY TICKETS
 
-# Runtime + Monitoring
+# Runtime / polling
 TIMEOUT_MINUTES=120
 OTP_WAIT_MINUTES=5
+EVENT_POLL_MINUTES=60
 POLL_INTERVAL_MS=3000
 API_POLL_INTERVAL_MS=3000
 
-# Browser + Debug
+# Seat selection
+STAND_PRIORITY=BOAT C STAND,C STAND,BOAT B STAND,B STAND
+REQUIRED_CONSECUTIVE_SEATS=2
+MATCH_RETRY_ATTEMPTS=12
+SEAT_POOL=O
+
+# Browser / debug
 HEADLESS=false
 BROWSER_ZOOM=0.5
 DEBUG_MODE=false
 
-### Seat Preferences
-STAND_PRIORITY=BOAT C STAND,C STAND,BOAT B STAND,B STAND
-REQUIRED_CONSECUTIVE_SEATS=2
-MATCH_RETRY_ATTEMPTS=12
-
-# Session / Multi-account Configuration
+# Sessions
 MAX_PARALLEL_SESSIONS=5
 SESSION_PRELOAD_MINUTES=15
 
@@ -79,255 +163,227 @@ SESSION_PRELOAD_MINUTES=15
 NETWORK_CAPTURE_ENABLED=true
 NETWORK_CAPTURE_BODIES=true
 
-# Checkout + Payment
+# Payment defaults
 PAYMENT_TYPE=UPI
-UPI_ID=7899179393@ybl
+UPI_ID=yourupi@ybl
 CARD_NUMBER=xxxx
 EXPIRY_DATE=MM/YY
 CVV=xxx
+
+# Checkout defaults
+FIRST_NAME=First
+LAST_NAME=Last
+GENDER=MALE
+ADDRESS=Address line
+LOCALITY=Locality
+PINCODE=560001
 ```
 
-### Key Settings
+### 2) `accounts.json` (optional but recommended for parallel runs)
 
-- **Global Booking Timeout**: Each account flow uses one total timeout budget for the entire booking flow
-- **Target Match**: RCB vs SRH (configurable in `src/config/config.js`)
-- **Seat Stand Priority**: `STAND_PRIORITY` defines the ordered list of stand names the automation attempts (highest priority first)
-- **Optional Match Steps**: "How many tickets" selection and match-page "Continue" are treated as optional when the UI auto-advances
-- **Network Capture**: Session capture starts early in session initialization so login/OTP and booking APIs are both recorded
-- **Parallel Sessions**: One browser flow per enabled account in `accounts.json`
-- **Payment Branching**: UPI or CARD is selected per account (`accounts.json`) or fallback env (`PAYMENT_TYPE`)
-- **Network Capture**: Session capture starts early in session initialization so login/OTP and booking APIs are both recorded
-- **Parallel Sessions**: One browser flow per enabled account in `accounts.json`
-- **Payment Branching**: UPI or CARD is selected per account (`accounts.json`) or fallback env (`PAYMENT_TYPE`)
-- **Parallel Sessions**: One browser flow per enabled account in `accounts.json`
-- **Payment Branching**: UPI or CARD is selected per account (`accounts.json`) or fallback env (`PAYMENT_TYPE`)
+If present, `src/config/config.js` loads accounts from `accounts.json` and starts one browser flow per enabled account.
 
-## 🎯 Usage
+Example shape:
 
-### Ticket Booking Mode (default)
+```json
+{
+  "accounts": [
+    {
+      "id": "JIO",
+      "phone": "9876543210",
+      "enabled": true,
+      "paymentType": "UPI",
+      "standPriority": ["BOAT C STAND", "C STAND"],
+      "checkout": {
+        "firstName": "Jane",
+        "lastName": "Doe",
+        "address": "Address",
+        "locality": "Locality",
+        "pincode": "560001"
+      },
+      "payment": {
+        "upiId": "jane@ybl"
+      }
+    }
+  ]
+}
+```
+
+If `accounts.json` is missing, the app falls back to a single default account built from `.env`.
+
+## Runtime Flow
+
+The current implementation in `src/index.js` follows this high-level flow:
+
+1. initialize one browser automation system per enabled account
+2. restore session or wait for login/OTP completion
+3. start network capture
+4. poll the ticketing API for the target event
+5. navigate to the event page once the event is live
+6. apply browser zoom and activate the Konva interceptor
+7. iterate stands in configured priority order
+8. select ticket count and continue to seat map
+9. resolve available consecutive seats from intercepted seat data
+10. click seats on canvas and intercept `ticketaddtocart` response
+11. react based on response:
+    - success -> continue to checkout
+    - seat unavailable -> retry new seats in same stand
+    - stand limit exceeded -> move to next stand
+    - hard limit exceeded -> stop that account flow
+12. complete checkout form and initiate payment
+13. keep successful browser sessions open for manual payment completion
+
+For the deeper version of this flow, see `screen_flow.md`.
+
+## Usage
+
+### Start ticket automation
+
 ```bash
 npm start
 ```
 
-This launches `src/index.js`, which now drives `ParallelSessionController` for all enabled accounts in `accounts.json`. Each browser session preloads the site, handles login, and starts monitoring for the configured match with the same seat-selection, checkout, and notification flow documented in `screen_flow.md`.
+This runs `node src/index.js`.
 
-### Merchandise Checkout Mode (optional)
-```bash
-npm start -- merch
-```
+### Development run
 
-Specifying `merch` (or `merchandise`) switches the automation to the merchandise checkout helper, reusing the first available browser session from the parallel controller for validating the cart/checkout steps. This is useful for testing UI selectors while the ticket flow is offline.
-
-### Development Mode
 ```bash
 npm run dev
 ```
 
-### Debug Mode
-Set `DEBUG_MODE=true` in `.env` to enable:
-- Screenshots at key steps
-- Visual seat overlays
-- Slow browser actions
-- Detailed console logs
-- Network request logging
+Currently this runs the same entry point as `npm start`.
 
-## 🏗 Architecture
+### Basic test script
 
-### Core Modules
-
-```
-src/
-├── index.js                    # Main orchestrator
-├── config/
-│   └── config.js              # Configuration management
-├── browser/
-│   └── browser.js             # Browser automation core
-├── auth/
-│   └── login.js               # Login detection & management
-├── detection/
-│   ├── matchDetector.js       # Match detection with DOM exploration
-│   └── seatMapDetector.js     # Seat map type detection
-├── selection/
-│   └── seatSelector.js        # Consecutive seat selection
-├── monitoring/
-│   └── eventMonitor.js        # Event-driven monitoring
-├── session/
-│   └── parallelController.js  # Multi-account parallel session management
-├── notifications/
-│   └── telegram.js            # Telegram bot integration
-└── utils/
-    ├── logger.js              # Structured logging
-    ├── debug.js               # Debug utilities
-    └── timeWindow.js          # Runtime window management
+```bash
+npm test
 ```
 
-### Workflow
+This runs `node src/test/test.js`.
 
-1. **Startup Phase**
-   - Load enabled accounts from `accounts.json`
-   - Start browser flows in parallel
-   - Restore per-account sessions from `sessions/<account_id>/`
-   - Handle login if required
+### Other manual test/debug helpers
 
-2. **Monitoring / Booking Phase**
-   - After login/session restore succeeds, per-session network capture starts automatically
-   - Each account gets one global timeout budget for the full booking flow
-   - Match detection with dynamic exploration
-   - Availability detection through event-driven and polling strategies
-   - Stand selection priority: `C Stand` then `B Stand`
-   - Seat selection priority: any 2 consecutive available seats in the chosen stand
-   - Retry if seat confirmation fails because seats become occupied
+Additional helper scripts exist in `src/test/`, including:
 
-3. **Cart Phase**
-   - Seat map detection (SVG/HTML/Canvas)
-   - Cart verification
-   - All strategies that successfully select seats continue through the same checkout flow
-   - Leave successful browser(s) open for manual payment
+- `test-browser.js`
+- `test-telegram.js`
+- `testMerchandiseCheckout.js`
+- `testSeatLayout.js`
+- `ticketMonitor.js`
 
-## 🌐 Network Capture Artifacts
+These are useful for targeted experimentation and debugging.
 
-After login is confirmed for a session, the JS automation records backend/network activity into:
+## Important Configuration Notes
+
+- **Global timeout**: controlled by `TIMEOUT_MINUTES`
+- **OTP wait**: controlled by `OTP_WAIT_MINUTES`
+- **Event polling timeout**: controlled by `EVENT_POLL_MINUTES`
+- **Seat retry window**: controlled by `SEAT_RETRY_MINUTES`
+- **Add-to-cart response timeout**: controlled by `ADD_TO_CART_TIMEOUT_MS`
+- **Payment wait window**: controlled by `PAYMENT_WAIT_MINUTES`
+- **Stand priority**: controlled by `STAND_PRIORITY` or per-account `standPriority`
+- **Seat count**: controlled by `REQUIRED_CONSECUTIVE_SEATS`
+- **Browser zoom**: `BROWSER_ZOOM=0.5` is useful so the full stand view fits on screen
+
+## Output Artifacts
+
+### Sessions
+
+Per-account session data is stored under:
+
+```text
+sessions/<account_id>/
+```
+
+Typical files include:
+
+- `session_storage.json`
+- `user_session.json`
+
+### Logs and screenshots
+
+- `logs/automation.log` - application logs
+- `screenshots/` - debug screenshots when debug mode is enabled or failures are captured
+
+### Network capture
+
+The app can capture session traffic into artifacts such as:
 
 - `logs/network/<account>-session<id>.json`
 - `logs/har/<account>-session<id>.har`
 
-These files are intended for later analysis so API behavior can be studied and possibly used to reduce UI dependency in future iterations.
+These files can contain sensitive information including cookies, headers, payloads, and response bodies.
 
-Notes:
-- capture starts after browser + page initialization for each session
-- HAR and JSON may contain sensitive headers, cookies, payloads, and response bodies
-- keep these files private and avoid sharing them without redaction
+**Do not share them publicly without redaction.**
 
-## 🔧 Advanced Configuration
+## Telegram Notifications
 
-### Customizing Match Detection
+When Telegram is enabled, the project can send notifications for:
 
-Edit `src/config/config.js`:
+- automation startup
+- login success/failure
+- event discovery
+- tickets added to cart
+- checkout reached
+- hard-stop conditions
+- timeout / summary updates
 
-```javascript
-match: {
-  keywords: {
-    team1: ['RCB', 'Bangalore', 'Royal Challengers'],
-    team2: ['SRH', 'Hyderabad', 'Sunrisers']
-  },
-  bookingButtonLabels: ['Book Now', 'Buy Tickets', 'Tickets', 'Select Seats']
-}
-```
+## Debugging
 
-### Seat Selection Priorities
+Enable debug mode in `.env`:
 
-1. **Priority List**: `STAND_PRIORITY` defines the priority order (e.g., C Stand → B Stand)
-
-### Multi-Account Strategy
-
-- Define accounts in `accounts.json`
-- Each enabled account gets its own browser/session files
-- One account reaching cart must **not** stop other accounts
-- Session files are stored under `sessions/<account_id>/`
-
-## 🐛 Debugging
-
-### Enable Debug Mode
 ```env
 DEBUG_MODE=true
 ```
 
-### Debug Features
-- **Screenshots**: Automatic capture at key steps
-- **Seat Overlays**: Visual highlighting of available seats
-- **Network Logging**: API request/response tracking
-- **Performance Metrics**: Page load timing analysis
-- **DOM Structure**: Element attribute logging
+Useful debugging capabilities include:
 
-### Log Files
-- `logs/automation.log`: Main application logs
-- `screenshots/`: Debug screenshots
-- `sessions/<account_id>/`: Saved per-account browser sessions
+- screenshots at important stages
+- detailed logs
+- network request capture
+- Konva seat-map interception support
+- account/session-specific diagnostics
 
-## 📱 Telegram Integration
+## Troubleshooting
 
-### Setup Bot
-1. Create bot with @BotFather
-2. Get bot token
-3. Get chat ID (send message to bot, check updates)
+### Login problems
+- verify phone/account configuration
+- check whether session files are stale or corrupted
+- delete the affected account folder under `sessions/` and log in again
+- confirm OTP can be entered within the configured timeout
 
-### Notification Types
-- 🚀 Automation started
-- 🔐 Login required
-- 🏏 Match detected
-- 🎫 Tickets booked
-- ❌ Error notifications
-- ⏰ Window status
+### Event not found
+- verify `TARGET_TEAM1`, `TARGET_TEAM2`, and `REQUIRED_BUTTON_TEXT`
+- confirm API polling settings and timeout values
+- check whether the event naming differs from assumptions
 
-## ⚠️ Important Notes
+### Seat selection issues
+- enable debug mode
+- inspect intercepted seat-template and seatlist data
+- verify stand names in `STAND_PRIORITY`
+- review Konva/canvas-specific logs and screenshots
 
-### Safety & Compliance
-- **Semi-Automated Payment**: script can fill checkout and initiate UPI/CARD steps, but final approval/OTP remains manual
-- **Session Persistence**: Stores per-account authentication/session state
-- **Rate Limiting**: Built-in delays to avoid detection
-- **Respect Terms of Use**: Use responsibly
+### Checkout/payment issues
+- verify payment defaults and per-account payment overrides
+- check if the site flow changed around addons, checkout, or gateway handling
+- remember that final payment authorization is intentionally manual
 
-### Performance Considerations
-- **Memory Usage**: Each session uses ~200MB RAM
-- **Network Bandwidth**: Multiple parallel requests
-- **CPU Usage**: DOM processing and image analysis
+### Performance issues
+- reduce parallel sessions
+- disable debug mode for live runs
+- inspect CPU/RAM usage when multiple browsers are active
 
-### Troubleshooting
+## Safety and Usage Notes
 
-#### Login Issues
-- Check Telegram notifications for login prompts
-- Verify session files in `sessions/<account_id>/` directories
-- Clear sessions if login state corrupted
+- This tool persists account session state locally.
+- Captured network artifacts may expose private account data.
+- The target site may change UI, API contracts, or anti-automation behavior at any time.
+- Use responsibly and in accordance with the site's terms and applicable laws.
 
-#### Seat Detection Issues
-- Enable debug mode for screenshots
-- Check seat map type detection logs
-- Verify seat attribute extraction
+## License
 
-#### Performance Issues
-- Reduce parallel session count
-- Disable debug mode in production
-- Monitor system resources
-
-#### OTP Rate Limit Situations
-- Avoid `npm start` when OTP capacity is exhausted.
-- Prefer code compilation/syntax validation and resume live execution later when OTP entry can complete.
-
-## 🔄 Testing
-
-### Test Mode
-1. Set `DEBUG_MODE=true`
-2. Use test event instead of real match
-3. Verify login detection
-4. Test seat selection logic
-
-### Test Checklist
-- [ ] Login flow works
-- [ ] Match detection finds target
-- [ ] Seat map loads correctly
-- [ ] Consecutive seats selected
-- [ ] Cart verification passes
-- [ ] Telegram notifications sent
-
-## 📄 License
-
-MIT License - see LICENSE file for details.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch
-3. Test thoroughly
-4. Submit pull request
-
-## 📞 Support
-
-For issues and questions:
-1. Check debug logs
-2. Review configuration
-3. Verify environment setup
-4. Check GitHub issues
+MIT
 
 ---
 
-**Disclaimer**: This tool is for educational purposes. Use responsibly and in accordance with website terms of service.
+**Disclaimer:** This repository is for educational and experimental automation purposes. Use it responsibly and at your own risk.

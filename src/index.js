@@ -149,37 +149,38 @@ class TicketAutomationSystem {
         const ticketUrl = this.matchDetector.getTicketPageUrl(event);
         logger.info(`${this.tag} Phase 3: Navigating to ticket page: ${ticketUrl}`);
 
-        // Navigate to event page
-        let navigated = await this.browser.navigateFast(ticketUrl);
-        if (!navigated) {
-            logger.error(`${this.tag} Failed to navigate to ticket page`);
-            return false;
-        }
-
         const continuePopupSelectors = [
             "button:has-text('Continue')",
             "button:has-text('Proceed')",
             "xpath=//*[@role='dialog' and contains(., 'Continue')]//button"
         ];
 
-        const maxRetries = 4;
-        let retryCount = 0;
-        while (retryCount < maxRetries) {
+        let navigated = false;
+        const deadline = Math.min(this.globalDeadline, Date.now() + (config.timeouts.globalMinutes * 60 * 1000));
+        let attempt = 0;
+
+        while (Date.now() < deadline) {
+            attempt += 1;
+            navigated = await this.browser.navigateFast(ticketUrl);
+            if (!navigated) {
+                logger.warn(`${this.tag} Attempt ${attempt}: Failed to navigate to ticket page, retrying...`);
+                continue;
+            }
+
             await this.browser.applyZoom();
             const btn = await this.browser.waitForAnyVisible(continuePopupSelectors, 2000, 200);
             if (btn) {
+                logger.info(`${this.tag} Continue popup detected after ${attempt} attempt(s)`);
                 break;
             }
-            retryCount += 1;
-            logger.warn(`${this.tag} Continue popup not visible yet — refresh attempt ${retryCount}/${maxRetries}`);
-            navigated = await this.browser.navigateFast(ticketUrl);
-            if (!navigated) {
-                logger.error(`${this.tag} Failed to refresh ticket page during retry`);
-                return false;
-            }
+
+            logger.warn(`${this.tag} Continue popup not visible yet — attempt ${attempt}, refreshing`);
         }
 
-        await this.browser.applyZoom();
+        if (!navigated) {
+            logger.error(`${this.tag} Failed to navigate to ticket page within timeout`);
+            return false;
+        }
 
         // Start Konva interceptor BEFORE any stand interaction
         await this.browser.startKonvaInterceptor();

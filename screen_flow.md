@@ -42,10 +42,10 @@
 
 ## Phase 4: Stand Selection (~1s per stand)
 
-16. **For each stand** in `config.seats.standPriority` (e.g., BOAT C STAND → C STAND → BOAT B STAND → B STAND):
+16. **For each stand** in `config.seats.standPriority` (e.g., BOAT C STAND → SUN PHARMA A STAND → PUMA SHANTA RANGASWAMY B STAND → BOAT C STAND):
   - Click stand using XPath: `//p[text()='CATEGORY']/following-sibling::div[1]//p[text()="{standName}"]`
   - This opens the seat map modal (Konva canvas)
-17. **Select ticket count**: Click the number button (e.g., "2") in "How many tickets?" section
+17. **Select ticket count**: Click the number button (e.g., "2") in "How many tickets?" section if visible
 18. **Click "Continue"** to proceed to seat map view
 19. **Wait for intercepted data**: seat-template (S3 JSON) + seatlist (API response)
   - Timeout: `config.timeouts.seatDataInterceptMs` (default 10s)
@@ -96,10 +96,10 @@
 
 ## Phase 8: Checkout & Payment (relaxed, 8+ min)
 
-30. **Fill checkout details**: First name, Last name, Email, Gender, Address, Pincode
+30. **Fill checkout details** using per-account overrides (first/last name, email, gender, address, locality, pincode). Defaults are defined in `config.checkout`, and each account in `accounts.json` can supply its own `checkout` section that merges over those values before `CheckoutFlow` runs.
 31. **Accept terms** checkbox
 32. **Click "PAY NOW"** → Juspay payment gateway (iframe)
-33. **Handle payment**:
+33. **Handle payment** using `config.payment` defaults combined with the account’s `payment` overrides:
   - **UPI**: Click UPI tab → Fill UPI ID → Click "VERIFY AND PAY"
   - **Card**: Click Cards tab → Fill card number, expiry, CVV → Click "PAY NOW"
 34. **Wait for payment completion**: Poll URL + body text for success/failure indicators
