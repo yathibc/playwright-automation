@@ -10,6 +10,14 @@ class CheckoutFlow {
     this.browser = browserManager;
     this.account = account || browserManager.account || {};
     this.telegram = telegram;
+    this.checkoutData = {
+      ...config.checkout,
+      ...(this.account.checkout || {})
+    };
+    this.paymentData = {
+      ...config.payment,
+      ...(this.account.payment || {})
+    };
   }
 
   get accountLabel() {
@@ -129,9 +137,9 @@ class CheckoutFlow {
   }
 
   async fillCheckoutDetails() {
-    await this.fillIfEmpty('textbox', 'First name', config.checkout.firstName);
-    await this.fillIfEmpty('textbox', 'Last name', config.checkout.lastName);
-    await this.fillIfEmpty('textbox', 'Email', this.account.email);
+    await this.fillIfEmpty('textbox', 'First name', this.checkoutData.firstName);
+    await this.fillIfEmpty('textbox', 'Last name', this.checkoutData.lastName);
+    await this.fillIfEmpty('textbox', 'Email', this.checkoutData.email);
     await this.fillOptionalGender();
     await this.fillShippingAddress();
     await this.browser.page.waitForTimeout(750);
@@ -161,9 +169,9 @@ class CheckoutFlow {
 
   async fillOptionalGender() {
     const candidates = [
-      `label:has-text("${config.checkout.gender}")`,
-      `button:has-text("${config.checkout.gender}")`,
-      `text=${config.checkout.gender}`
+      `label:has-text("${this.checkoutData.gender}")`,
+      `button:has-text("${this.checkoutData.gender}")`,
+      `text=${this.checkoutData.gender}`
     ];
 
     for (const selector of candidates) {
@@ -190,15 +198,21 @@ class CheckoutFlow {
 
   async fillShippingAddress() {
     // Use direct name-attribute selectors confirmed from live UI inspection
-    await this.fillByNameAttr('addLine1', config.checkout.address);
-    await this.fillByNameAttr('addLine2', config.checkout.locality);
-    await this.fillByNameAttr('pinCode', config.checkout.pincode);
+    await this.fillIfEmpty('textbox', 'Address line 1', this.checkoutData.address);
+    await this.fillIfEmpty('textbox', 'Address line 2', this.checkoutData.locality);
+    await this.fillIfEmpty('textbox', 'Pincode', this.checkoutData.pincode);
 
     // Wait for city/state auto-population after pincode
     await this.browser.page.waitForTimeout(1500);
 
     const cityValue = await this.getFieldValueByName('city');
+    if (!cityValue) {
+      logger.warn(`City not populated automatically after pin code for ${this.accountLabel}`);
+    }
     const stateValue = await this.getFieldValueByName('state');
+    if (!stateValue) {
+      logger.warn(`State not populated automatically after pin code for ${this.accountLabel}`);
+    }
     logger.info(`Checkout address state after pincode fill for
     ${this.accountLabel}: city='${cityValue || ''}', state='${stateValue || ''}'`);
   }
@@ -440,7 +454,7 @@ class CheckoutFlow {
       throw new Error('UPI input not available on payment page');
     }
 
-    await upiInput.fill(config.payment.upiId);
+    await upiInput.fill(this.paymentData.upiId);
     logger.info(`Filled UPI ID for ${this.accountLabel}`);
 
     const verifyPay = await this._waitForPaymentVisible([
@@ -475,10 +489,10 @@ class CheckoutFlow {
       throw new Error('Card number input not available on payment page');
     }
 
-    await cardInput.fill(config.payment.cardNumber);
-    await this.fillFieldByRoleName('Expiry', config.payment.expiryDate);
-    await this.fillFieldByRoleName('MM/YY', config.payment.expiryDate);
-    await this.fillFieldByRoleName('CVV', config.payment.cvv);
+    await cardInput.fill(this.paymentData.cardNumber);
+    await this.fillFieldByRoleName('Expiry', this.paymentData.expiryDate);
+    await this.fillFieldByRoleName('MM/YY', this.paymentData.expiryDate);
+    await this.fillFieldByRoleName('CVV', this.paymentData.cvv);
 
     const payNow = await this.browser.waitForAnyVisible([
       "role=button[name='PAY NOW']",
@@ -491,8 +505,8 @@ class CheckoutFlow {
     }
 
     await payNow.click();
-    logger.info(`💳 Card payment initiated for ${this.accountLabel}. Complete 3DS/OTP manually within ${config.checkout.cardOtpWaitMinutes} minutes.`);
-    await this.telegram.sendMessage(`💳 *Card Payment Initiated*\n\nAccount: ${this.accountLabel}\nComplete 3DS/OTP within ${config.checkout.cardOtpWaitMinutes} minutes.`);
+    logger.info(`💳 Card payment initiated for ${this.accountLabel}. Complete 3DS/OTP manually within ${this.checkoutData.cardOtpWaitMinutes} minutes.`);
+    await this.telegram.sendMessage(`💳 *Card Payment Initiated*\n\nAccount: ${this.accountLabel}\nComplete 3DS/OTP within ${this.checkoutData.cardOtpWaitMinutes} minutes.`);
   }
 
   async fillFieldByRoleName(name, value) {
