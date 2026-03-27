@@ -144,6 +144,17 @@ EVENT_POLL_MINUTES=60
 POLL_INTERVAL_MS=3000
 API_POLL_INTERVAL_MS=3000
 
+# Adaptive event polling (recommended for long monitoring windows)
+ADAPTIVE_POLLING_ENABLED=true
+DROP_DATE_TIME=2026-03-30T19:00:00+05:30
+RELEASE_WINDOW_MINUTES=15
+API_POLL_JITTER_MS=750
+API_POLL_MAX_BACKOFF_MS=30000
+API_POLL_FAR_HOURS_MS=60000
+API_POLL_PRE_HOUR_MS=15000
+API_POLL_PRE_RELEASE_MS=5000
+API_POLL_RELEASE_MS=2500
+
 # Seat selection
 STAND_PRIORITY=BOAT C STAND,C STAND,BOAT B STAND,B STAND
 REQUIRED_CONSECUTIVE_SEATS=2
@@ -278,12 +289,27 @@ These are useful for targeted experimentation and debugging.
 - **Global timeout**: controlled by `TIMEOUT_MINUTES`
 - **OTP wait**: controlled by `OTP_WAIT_MINUTES`
 - **Event polling timeout**: controlled by `EVENT_POLL_MINUTES`
+- **Adaptive event polling**: controlled by `ADAPTIVE_POLLING_ENABLED`, `DROP_DATE_TIME`, `RELEASE_WINDOW_MINUTES`, and the `API_POLL_*` interval/backoff values
 - **Seat retry window**: controlled by `SEAT_RETRY_MINUTES`
 - **Add-to-cart response timeout**: controlled by `ADD_TO_CART_TIMEOUT_MS`
 - **Payment wait window**: controlled by `PAYMENT_WAIT_MINUTES`
 - **Stand priority**: controlled by `STAND_PRIORITY` or per-account `standPriority`
 - **Seat count**: controlled by `REQUIRED_CONSECUTIVE_SEATS`
 - **Browser zoom**: `BROWSER_ZOOM=0.5` is useful so the full stand view fits on screen
+
+### Long-running event polling strategy
+
+For multi-hour monitoring, avoid hitting `eventlist` every 3 seconds all day.
+
+With adaptive polling enabled, `matchDetector` can shift polling like this:
+
+- more than 60 minutes before drop -> every 60 seconds
+- 60 to 15 minutes before drop -> every 15 seconds
+- last 15 minutes before drop -> every 5 seconds
+- release window -> every ~2–3 seconds
+- on repeated HTTP 403 responses -> capped exponential backoff with jitter, then resume polling
+
+Set `DROP_DATE_TIME` to the expected ticket-release datetime so the app knows when to switch phases.
 
 ## Output Artifacts
 

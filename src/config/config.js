@@ -105,7 +105,20 @@ const config = {
     // S3-hosted static assets (no auth needed)
     seatTemplateUrl: 'https://tg3.s3.ap-south-1.amazonaws.com/revents/seat-template/{standCode}.json',
     standsListUrl: 'https://tg3.s3.ap-south-1.amazonaws.com/revents/standview/standList.json',
-    pollIntervalMs: parseInt(process.env.API_POLL_INTERVAL_MS) || 3000
+    pollIntervalMs: parseInt(process.env.API_POLL_INTERVAL_MS) || 3000,
+    adaptivePolling: {
+      enabled: process.env.ADAPTIVE_POLLING_ENABLED !== 'false',
+      dropDateTime: process.env.DROP_DATE_TIME || '',
+      releaseWindowMinutes: parseInt(process.env.RELEASE_WINDOW_MINUTES) || 15,
+      jitterMs: parseInt(process.env.API_POLL_JITTER_MS) || 750,
+      maxBackoffMs: parseInt(process.env.API_POLL_MAX_BACKOFF_MS) || 30000,
+      phases: {
+        farHoursMs: parseInt(process.env.API_POLL_FAR_HOURS_MS) || 60000,
+        preHourMs: parseInt(process.env.API_POLL_PRE_HOUR_MS) || 15000,
+        preReleaseMs: parseInt(process.env.API_POLL_PRE_RELEASE_MS) || 5000,
+        releaseMs: parseInt(process.env.API_POLL_RELEASE_MS) || 2500
+      }
+    }
   },
 
   // ── Target match configuration ──────────────────────────────────────

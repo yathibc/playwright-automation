@@ -15,6 +15,80 @@ class MatchDetector {
     this.browser = browserManager;
     this._authToken = null;
     this._discoveredEvent = null;  // Cached event data from API
+    this._consecutive403s = 0;
+    this._lastPollingPhase = null;
+  }
+
+  _getAdaptivePollingConfig() {
+    return config.api.adaptivePolling || {};
+  }
+
+  _getDropDateTime() {
+    const adaptive = this._getAdaptivePollingConfig();
+    if (!adaptive.enabled || !adaptive.dropDateTime) return null;
+
+    const ts = Date.parse(adaptive.dropDateTime);
+    if (Number.isNaN(ts)) {
+      logger.warn(`Invalid DROP_DATE_TIME value: "${adaptive.dropDateTime}". Falling back to fixed polling interval.`);
+      return null;
+    }
+
+    return ts;
+  }
+
+  _getPollingStrategy() {
+    const adaptive = this._getAdaptivePollingConfig();
+    const baseInterval = config.api.pollIntervalMs;
+    const dropTs = this._getDropDateTime();
+
+    if (!adaptive.enabled || !dropTs) {
+      return {
+        intervalMs: baseInterval,
+        phase: 'fixed'
+      };
+    }
+
+    const msUntilDrop = dropTs - Date.now();
+    const releaseWindowMs = (adaptive.releaseWindowMinutes || 15) * 60 * 1000;
+
+    if (msUntilDrop > 60 * 60 * 1000) {
+      return { intervalMs: adaptive.phases?.farHoursMs || 60000, phase: 'far_hours' };
+    }
+
+    if (msUntilDrop > 15 * 60 * 1000) {
+      return { intervalMs: adaptive.phases?.preHourMs || 15000, phase: 'pre_hour' };
+    }
+
+    if (msUntilDrop > 0) {
+      return { intervalMs: adaptive.phases?.preReleaseMs || 5000, phase: 'pre_release' };
+    }
+
+    if (Math.abs(msUntilDrop) <= releaseWindowMs) {
+      return { intervalMs: adaptive.phases?.releaseMs || 2500, phase: 'release' };
+    }
+
+    return {
+      intervalMs: baseInterval,
+      phase: 'post_release_fallback'
+    };
+  }
+
+  _applyJitter(intervalMs) {
+    const adaptive = this._getAdaptivePollingConfig();
+    const jitterMs = Math.max(0, adaptive.jitterMs || 0);
+    if (!jitterMs) return intervalMs;
+
+    const offset = Math.floor(Math.random() * ((jitterMs * 2) + 1)) - jitterMs;
+    return Math.max(1000, intervalMs + offset);
+  }
+
+  _get403BackoffMs() {
+    const adaptive = this._getAdaptivePollingConfig();
+    const maxBackoffMs = Math.max(1000, adaptive.maxBackoffMs || 30000);
+    if (this._consecutive403s <= 0) return 0;
+
+    const backoffMs = Math.min(2000 * (2 ** (this._consecutive403s - 1)), maxBackoffMs);
+    return this._applyJitter(backoffMs);
   }
 
   /**
@@ -47,6 +121,17 @@ class MatchDetector {
         },
         timeout: config.timeouts.apiResponseMs
       });
+
+      if (response.status() === 403) {
+        this._consecutive403s += 1;
+        logger.warn(`Event list API returned 403 (consecutive: ${this._consecutive403s})`);
+        return null;
+      }
+
+      if (this._consecutive403s > 0 && response.ok()) {
+        logger.info(`Event list API recovered after ${this._consecutive403s} consecutive 403 response(s)`);
+        this._consecutive403s = 0;
+      }
 
       if (!response.ok()) {
         logger.warn(`Event list API returned ${response.status()}`);
@@ -99,16 +184,22 @@ class MatchDetector {
    * @returns {Object|null} Event object { event_Code, event_Group_Code, event_Name, ... }
    */
   async pollForTargetEvent(deadlineTs = null) {
-    const pollInterval = config.api.pollIntervalMs;
     const maxDuration = config.timeouts.eventPollMinutes * 60 * 1000;
     const deadline = deadlineTs || (Date.now() + maxDuration);
+    const initialStrategy = this._getPollingStrategy();
 
     logger.info(`Polling for target event: "${config.match.displayName}"
-    (interval: ${pollInterval}ms, deadline: ${Math.ceil((deadline - Date.now()) / 1000)}s)`);
+    (interval: ${initialStrategy.intervalMs}ms, phase: ${initialStrategy.phase}, deadline: ${Math.ceil((deadline - Date.now()) / 1000)}s)`);
 
     let attempt = 0;
     while (Date.now() < deadline) {
       attempt++;
+
+      const strategy = this._getPollingStrategy();
+      if (this._lastPollingPhase !== strategy.phase) {
+        this._lastPollingPhase = strategy.phase;
+        logger.info(`Polling phase switched to "${strategy.phase}" (base interval: ${strategy.intervalMs}ms)`);
+      }
 
       const events = await this._fetchEventList();
       if (events) {
@@ -133,7 +224,15 @@ class MatchDetector {
       // Wait before next poll — but check deadline first
       const remaining = deadline - Date.now();
       if (remaining <= 0) break;
-      await new Promise(resolve => setTimeout(resolve, Math.min(pollInterval, remaining)));
+
+      const backoffMs = this._get403BackoffMs();
+      const nextDelay = backoffMs > 0 ? backoffMs : this._applyJitter(strategy.intervalMs);
+
+      if (backoffMs > 0) {
+        logger.warn(`Applying 403 exponential backoff: waiting ${Math.min(nextDelay, remaining)}ms before next eventlist poll`);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, Math.min(nextDelay, remaining)));
     }
 
     logger.warn(`Target event not found within polling window (${attempt} attempts)`);
