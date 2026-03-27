@@ -198,9 +198,9 @@ class CheckoutFlow {
 
   async fillShippingAddress() {
     // Use direct name-attribute selectors confirmed from live UI inspection
-    await this.fillIfEmpty('textbox', 'Address line 1', this.checkoutData.address);
-    await this.fillIfEmpty('textbox', 'Address line 2', this.checkoutData.locality);
-    await this.fillIfEmpty('textbox', 'Pincode', this.checkoutData.pincode);
+    await this.fillByNameAttr('addLine1', this.checkoutData.address);
+    await this.fillByNameAttr('addLine2', this.checkoutData.locality);
+    await this.fillByNameAttr('pinCode', this.checkoutData.pincode);
 
     // Wait for city/state auto-population after pincode
     await this.browser.page.waitForTimeout(1500);
