@@ -106,8 +106,7 @@ class TicketAutomationSystem {
         await this.browser.startNetworkCapture();
 
         // Login (session reuse or OTP)
-        this.login = new LoginManager(this.browser, this.account);
-        await this.telegram.sendLoginRequired(this.account.id);
+        this.login = new LoginManager(this.browser, this.account, this.telegram);
         const loggedIn = await this.login.detectAndHandleLogin();
         if (!loggedIn) {
             logger.error(`${this.tag} Login failed or timed out`);
@@ -151,13 +150,35 @@ class TicketAutomationSystem {
         logger.info(`${this.tag} Phase 3: Navigating to ticket page: ${ticketUrl}`);
 
         // Navigate to event page
-        const navigated = await this.browser.navigateFast(ticketUrl);
+        let navigated = await this.browser.navigateFast(ticketUrl);
         if (!navigated) {
             logger.error(`${this.tag} Failed to navigate to ticket page`);
             return false;
         }
 
-        // Apply 50% zoom so entire stand view fits on screen
+        const continuePopupSelectors = [
+            "button:has-text('Continue')",
+            "button:has-text('Proceed')",
+            "xpath=//*[@role='dialog' and contains(., 'Continue')]//button"
+        ];
+
+        const maxRetries = 4;
+        let retryCount = 0;
+        while (retryCount < maxRetries) {
+            await this.browser.applyZoom();
+            const btn = await this.browser.waitForAnyVisible(continuePopupSelectors, 2000, 200);
+            if (btn) {
+                break;
+            }
+            retryCount += 1;
+            logger.warn(`${this.tag} Continue popup not visible yet — refresh attempt ${retryCount}/${maxRetries}`);
+            navigated = await this.browser.navigateFast(ticketUrl);
+            if (!navigated) {
+                logger.error(`${this.tag} Failed to refresh ticket page during retry`);
+                return false;
+            }
+        }
+
         await this.browser.applyZoom();
 
         // Start Konva interceptor BEFORE any stand interaction

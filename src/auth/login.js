@@ -4,9 +4,11 @@ const config = require('../config/config');
 const logger = createModuleLogger('Auth');
 
 class LoginManager {
-  constructor(browserManager, account = null) {
+  constructor(browserManager, account = null, notifier = null) {
     this.browser = browserManager;
     this.account = account || browserManager.account || null;
+    this.notifier = notifier;
+    this.loginNotificationSent = false;
   }
 
   async detectPassiveAuthState() {
@@ -315,15 +317,37 @@ class LoginManager {
     }
 
     if (state === 'phone_required') {
+      await this._notifyLoginRequired(state);
       await this.fillPhoneAndNext();
     } else if (state === 'otp_required') {
+      await this._notifyLoginRequired(state);
       logger.info('OTP screen already visible; entering OTP wait mode directly');
     } else {
+      await this._notifyLoginRequired(state);
       await this.fillPhoneAndNext();
     }
 
     const otpOk = await this.waitForManualOtpSuccess();
     return otpOk;
+  }
+
+  async _notifyLoginRequired(state) {
+    if (this.loginNotificationSent) {
+      return;
+    }
+    this.loginNotificationSent = true;
+
+    if (!this.notifier || !this.notifier.sendLoginRequired) {
+      logger.debug(`Login required notification skipped (state: ${state})`);
+      return;
+    }
+
+    try {
+      logger.info(`Sending login required notification (state: ${state}) for account ${this.account?.id || 'unknown'}`);
+      await this.notifier.sendLoginRequired(this.account?.id || 'unknown');
+    } catch (error) {
+      logger.error(`Failed to send login required notification: ${error.message}`);
+    }
   }
 }
 

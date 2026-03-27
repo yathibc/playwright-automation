@@ -42,7 +42,7 @@ class ParallelSessionController {
   async createSession(sessionId, account) {
     try {
       const browserManager = new BrowserManager(sessionId, account);
-      const loginManager = new LoginManager(browserManager, account);
+      const loginManager = new LoginManager(browserManager, account, new (require('../notifications/telegram'))());
       const matchDetector = new MatchDetector(browserManager);
       const seatMapDetector = new SeatMapDetector(browserManager);
       const checkoutFlow = new CheckoutFlow({

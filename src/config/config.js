@@ -4,6 +4,22 @@ const fs = require('fs');
 
 dotenv.config();
 
+const DEFAULT_CHECKOUT = {
+  firstName: process.env.FIRST_NAME || 'Yatheendra',
+  lastName: process.env.LAST_NAME || 'B C',
+  gender: process.env.GENDER || 'MALE',
+  address: process.env.ADDRESS || '15 Saptagiri',
+  locality: process.env.LOCALITY || '2nd cross 14th main nagendra block',
+  pincode: process.env.PINCODE || '560050'
+};
+
+const DEFAULT_PAYMENT = {
+  upiId: process.env.UPI_ID || '7899179393@ybl',
+  cardNumber: process.env.CARD_NUMBER || '5241810406450247',
+  expiryDate: process.env.EXPIRY_DATE || '01/33',
+  cvv: process.env.CVV || '439'
+};
+
 function parseStandPriority(value) {
   if (!value) return [];
   if (Array.isArray(value)) {
@@ -25,12 +41,23 @@ function loadAccounts() {
       if (enabledAccounts.length) {
         return enabledAccounts.map((account, index) => {
           const standPriority = parseStandPriority(account.standPriority);
+          const checkoutOverrides = account.checkout || {};
+          const paymentOverrides = account.payment || {};
           return {
             id: account.id || `acc${index + 1}`,
             phone: account.phone || process.env.LOGIN_PHONE || '7899179393',
+            email: account.email || `${(account.id || `acc${index + 1}`).toLowerCase()}@example.com`,
             enabled: account.enabled !== false,
             standPriority: standPriority.length ? standPriority : null,
-            paymentType: String(account.paymentType || process.env.PAYMENT_TYPE || 'UPI').toUpperCase()
+            paymentType: String(account.paymentType || process.env.PAYMENT_TYPE || 'UPI').toUpperCase(),
+            checkout: {
+              ...DEFAULT_CHECKOUT,
+              ...checkoutOverrides
+            },
+            payment: {
+              ...DEFAULT_PAYMENT,
+              ...paymentOverrides
+            }
           };
         });
       }
@@ -160,21 +187,13 @@ const config = {
   },
 
   checkout: {
-    firstName: process.env.FIRST_NAME || 'Yatheendra',
-    lastName: process.env.LAST_NAME || 'B C',
-    gender: process.env.GENDER || 'MALE',
-    address: process.env.ADDRESS || '15 Saptagiri',
-    locality: process.env.LOCALITY || '2nd cross 14th main nagendra block',
-    pincode: process.env.PINCODE || '560050',
+    ...DEFAULT_CHECKOUT,
     paymentWaitMinutes: parseInt(process.env.PAYMENT_WAIT_MINUTES) || 10,
     cardOtpWaitMinutes: parseInt(process.env.CARD_OTP_WAIT_MINUTES) || 5
   },
 
   payment: {
-    upiId: process.env.UPI_ID || '7899179393@ybl',
-    cardNumber: process.env.CARD_NUMBER || '5241810406450247',
-    expiryDate: process.env.EXPIRY_DATE || '01/33',
-    cvv: process.env.CVV || '439'
+    ...DEFAULT_PAYMENT
   },
 
   // ── Add-to-cart response handling ───────────────────────────────────
