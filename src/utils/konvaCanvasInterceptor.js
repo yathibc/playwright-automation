@@ -15,6 +15,7 @@ class KonvaCanvasInterceptor {
     this.seatListData = null;       // { result: [...] } from seat-list API
     this.standsListData = null;     // { result: { stands: [...] } } from standslist API
     this.interceptedStandCode = null;
+    this.lastSeatDataAt = 0;
     this.page = null;
     this._routes = [];
   }
@@ -29,6 +30,7 @@ class KonvaCanvasInterceptor {
     this.seatListData = null;
     this.standsListData = null;
     this.interceptedStandCode = null;
+    this.lastSeatDataAt = 0;
 
     // Intercept seat-template JSON (hosted on S3)
     // URL pattern: https://tg3.s3.ap-south-1.amazonaws.com/revents/seat-template/{standCode}.json
@@ -44,6 +46,7 @@ class KonvaCanvasInterceptor {
           if (match) {
             this.interceptedStandCode = match[1];
           }
+          this.lastSeatDataAt = Date.now();
           logger.info(`Intercepted seat-template for stand ${this.interceptedStandCode}:
            ${(this.seatTemplateData || []).length} seats`);
         } catch (parseErr) {
@@ -67,6 +70,7 @@ class KonvaCanvasInterceptor {
         const body = await response.text();
         try {
           this.seatListData = JSON.parse(body);
+          this.lastSeatDataAt = Date.now();
           const resultCount = this.seatListData?.result?.length || 0;
           logger.info(`Intercepted seat-list: ${resultCount} seat entries`);
         } catch (parseErr) {
@@ -136,12 +140,12 @@ class KonvaCanvasInterceptor {
    * @param {number} timeoutMs - max wait time in ms (default 30s)
    * @returns {boolean} true if both were captured
    */
-  async waitForSeatData(timeoutMs = 30000) {
+  async waitForSeatData(timeoutMs = 30000, minCapturedAt = 0) {
     const start = Date.now();
     const pollInterval = 500;
 
     while (Date.now() - start < timeoutMs) {
-      if (this.seatTemplateData && this.seatListData) {
+      if (this.seatTemplateData && this.seatListData && this.lastSeatDataAt >= minCapturedAt) {
         logger.info('Both seat-template and seat-list data captured');
         return true;
       }
@@ -178,6 +182,7 @@ class KonvaCanvasInterceptor {
     this.seatTemplateData = null;
     this.seatListData = null;
     this.interceptedStandCode = null;
+    this.lastSeatDataAt = 0;
   }
 }
 

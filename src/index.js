@@ -39,6 +39,13 @@ class TicketAutomationSystem {
         this.globalDeadline = Date.now() + (config.timeouts.globalMinutes * 60 * 1000);
     }
 
+    getStandPriority() {
+        if (Array.isArray(this.account?.standPriority) && this.account.standPriority.length > 0) {
+            return this.account.standPriority;
+        }
+        return config.seats.standPriority;
+    }
+
     hasTimeLeft() {
         return Date.now() < this.globalDeadline;
     }
@@ -50,7 +57,7 @@ class TicketAutomationSystem {
     async start() {
         logger.info(`${this.tag} 🎟 Starting RCB Ticket Automation — API-First Hybrid v2.1 (session ${this.sessionId})`);
         logger.info(`${this.tag} Global timeout: ${config.timeouts.globalMinutes} min | OTP timeout: ${config.timeouts.otpWaitMinutes} min | Payment timeout: ${config.timeouts.paymentWaitMinutes} min`);
-        logger.info(`${this.tag} Target: ${config.match.displayName} | Stands: ${config.seats.standPriority.join(' → ')}`);
+        logger.info(`${this.tag} Target: ${config.match.displayName} | Stands: ${this.getStandPriority().join(' → ')}`);
         logger.info(`${this.tag} Browser zoom: ${config.browser.zoomLevel * 100}% | Seats needed: ${config.seats.requiredConsecutiveSeats}`);
 
         try {
@@ -98,9 +105,6 @@ class TicketAutomationSystem {
         // Navigate to website
         const navigated = await this.browser.navigateToWebsite();
         if (!navigated) return false;
-
-        // Apply zoom immediately after page loads
-        await this.browser.applyZoom();
 
         // Start network capture
         await this.browser.startNetworkCapture();
@@ -167,7 +171,6 @@ class TicketAutomationSystem {
                 continue;
             }
 
-            await this.browser.applyZoom();
             const btn = await this.browser.waitForAnyVisible(continuePopupSelectors, 2000, 200);
             if (btn) {
                 logger.info(`${this.tag} Continue popup detected after ${attempt} attempt(s)`);
@@ -194,11 +197,10 @@ class TicketAutomationSystem {
             logger.warn(`${this.tag} Ticket UI not detected on page — may need to refresh`);
             // Try refreshing once
             await this.browser.navigateFast(ticketUrl);
-            await this.browser.applyZoom();
             await this._dismissContinuePopup();
         }
 
-        logger.info(`${this.tag} ✅ Phase 3 complete: On ticket page, zoom applied, interceptor active`);
+        logger.info(`${this.tag} ✅ Phase 3 complete: On ticket page, interceptor active`);
 
         // Phase 4-6: Stand selection → Seat selection → Add to cart (with retry)
         return await this._standAndSeatLoop(event);
@@ -210,7 +212,7 @@ class TicketAutomationSystem {
      * Handles all ticketaddtocart response codes.
      */
     async _standAndSeatLoop(event) {
-        const standPriority = config.seats.standPriority;
+        const standPriority = this.getStandPriority();
         const seatCount = config.seats.requiredConsecutiveSeats;
         let roundNumber = 0;
 
@@ -222,6 +224,18 @@ class TicketAutomationSystem {
             for (let standIdx = 0; standIdx < standPriority.length && this.hasTimeLeft(); standIdx++) {
                 const standName = standPriority[standIdx];
                 logger.info(`${this.tag} Phase 4: Trying stand "${standName}" (${standIdx + 1}/${standPriority.length})`);
+
+                const interceptor = this.browser.konvaInterceptor;
+                if (!interceptor) {
+                    logger.error(`${this.tag} Konva interceptor not available`);
+                    continue;
+                }
+
+                // Clear any previous stand's captured data before starting a new stand attempt.
+                // Some pages fire the seat-list/template request as soon as the stand is clicked,
+                // before the seat map modal is fully visible.
+                interceptor.reset();
+                const standAttemptStartedAt = Date.now();
 
                 // Click the stand in the UI
                 const standClicked = await this._clickStand(standName);
@@ -236,14 +250,20 @@ class TicketAutomationSystem {
                 // Click Continue to open seat map
                 await this._clickContinueButton();
 
-                // Wait for seat data from interceptor (seat-template + seatlist)
-                const interceptor = this.browser.konvaInterceptor;
-                if (!interceptor) {
-                    logger.error(`${this.tag} Konva interceptor not available`);
+                const seatMapVisible = await this._waitForSeatMapCanvas();
+                if (!seatMapVisible) {
+                    logger.warn(`${this.tag} Seat map canvas not visible for stand "${standName}"; skipping coordinate selection`);
+                    if (this.browser.konvaInterceptor) {
+                        this.browser.konvaInterceptor.reset();
+                    }
                     continue;
                 }
 
-                const dataReady = await interceptor.waitForSeatData(config.timeouts.seatDataInterceptMs);
+                // Wait for seat data from interceptor (seat-template + seatlist)
+                const dataReady = await interceptor.waitForSeatData(
+                    config.timeouts.seatDataInterceptMs,
+                    standAttemptStartedAt
+                );
                 if (!dataReady) {
                     logger.warn(`${this.tag} Seat data not intercepted for stand "${standName}"`);
                     continue;
@@ -292,8 +312,15 @@ class TicketAutomationSystem {
 
                     // Click each seat on the canvas
                     for (const seat of seatsToClick) {
+                        await this.browser.showClickMarker(
+                            seat.browserX,
+                            seat.browserY,
+                            `${seat.row}${seat.seat_No}`
+                        );
+                        await this.browser.page.waitForTimeout(150);
                         await this.browser.page.mouse.click(seat.browserX, seat.browserY);
                         logger.info(`${this.tag} Clicked seat ${seat.row}${seat.seat_No}`);
+                        await this.browser.page.waitForTimeout(150);
                     }
 
                     // Click "Proceed" button
@@ -340,9 +367,9 @@ class TicketAutomationSystem {
                         logger.info(`${this.tag} Seats taken by another user — retrying with new seats in same stand`);
                         // Wait for seatlist to refresh (the app auto-refetches)
                         await new Promise(resolve => setTimeout(resolve, 1000));
-                        // Reset interceptor to capture fresh seatlist
-                        interceptor.seatListData = null;
-                        await interceptor.waitForSeatData(config.timeouts.seatDataInterceptMs);
+                        // Reset interceptor to capture fresh seat data only after this retry point
+                        interceptor.reset();
+                        await interceptor.waitForSeatData(config.timeouts.seatDataInterceptMs, Date.now());
                         continue; // Retry within same stand
                     }
 
@@ -455,6 +482,8 @@ class TicketAutomationSystem {
 
     async _clickContinueButton() {
         try {
+            // Apply zoom only right before opening the seat map modal.
+            await this.browser.applyZoom();
             const btn = await this.browser.waitForAnyVisible([
                 "button:has-text('Continue')",
                 "button:has-text('Proceed')",
@@ -465,6 +494,24 @@ class TicketAutomationSystem {
                 return true;
             }
         } catch (_) {
+        }
+        return false;
+    }
+
+    async _waitForSeatMapCanvas(timeoutMs = 8000) {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+            try {
+                const canvas = this.browser.page.locator('.konvajs-content canvas, canvas').first();
+                if (await canvas.isVisible()) {
+                    const box = await canvas.boundingBox();
+                    if (box && box.width > 50 && box.height > 50) {
+                        return true;
+                    }
+                }
+            } catch (_) {
+            }
+            await this.browser.page.waitForTimeout(250);
         }
         return false;
     }

@@ -1,0 +1,434 @@
+{
+  "info": {
+    "_postman_id": "1bd91a61-6706-4e29-b191-9341b1bd9610",
+    "name": "RCB Ticketing APIs",
+    "description": "Requests to explore match ticket metadata, stand/seat templates, and cart operations observed in the HAR sample.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "13177688"
+  },
+  "item": [
+    {
+      "name": "List match events",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, text/plain, */*"
+          },
+          {
+            "key": "Origin",
+            "value": "https://shop.royalchallengers.com"
+          },
+          {
+            "key": "Referer",
+            "value": "https://shop.royalchallengers.com/"
+          },
+          {
+            "key": "authorization",
+            "value": "Bearer yvo2JqGgXlHZqCGpKxvZndJbLv7zLZEYdZG0qr5T60E5DeR+ZtKuqazycICFiSz1eXNoCVcJZrtXbPZJ7x68VPNBtzasXVq18hfO1lpxfLuOwNCWanGatkjcLUGsL0FPJ87XIPbk8TmIeJdAxtIBqyCc8KPzD7QB6ieYMog08uJ/YbXDm9eBNzrlCHzyWuEA1QZavLpCOm4+Q9nPNL+HqOqWOtL2Rm89R+IQIjxPIQAUUQx+/ITOXhVjVriyeG10Yp5LqdpEKPc0zPeSAcP1LpySQaxW5FCoILxUwqkOouKid7p7ovfF6ZQHbPRwElEL5hrrTT4PTSEyJfCicYiLosooAtEjQQXpTwpjIJ+hOppKPrYkCD9Lvt7ri1fqA9VAutj40+RylLnCTXG85X36qjmmksymP9y0Tbkc2PutrX+ftVIogB2iKxyooQDvAIwUnIS7gxgNiVFszZ+gsuc7x1WDQ7Ytzz/mkOfQRVabOH8=",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://rcbscaleapi.ticketgenie.in/ticket/eventlist/O",
+          "protocol": "https",
+          "host": [
+            "rcbscaleapi",
+            "ticketgenie",
+            "in"
+          ],
+          "path": [
+            "ticket",
+            "eventlist",
+            "O"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Stand list",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Referer",
+            "value": "https://shop.royalchallengers.com/"
+          }
+        ],
+        "url": {
+          "raw": "https://tg3.s3.ap-south-1.amazonaws.com/revents/standview/standList.json",
+          "protocol": "https",
+          "host": [
+            "tg3",
+            "s3",
+            "ap-south-1",
+            "amazonaws",
+            "com"
+          ],
+          "path": [
+            "revents",
+            "standview",
+            "standList.json"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Seat template (stand 12)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, text/plain, */*"
+          },
+          {
+            "key": "Referer",
+            "value": "https://shop.royalchallengers.com/"
+          }
+        ],
+        "url": {
+          "raw": "https://tg3.s3.ap-south-1.amazonaws.com/revents/seat-template/12.json",
+          "protocol": "https",
+          "host": [
+            "tg3",
+            "s3",
+            "ap-south-1",
+            "amazonaws",
+            "com"
+          ],
+          "path": [
+            "revents",
+            "seat-template",
+            "12.json"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Seat List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "sec-ch-ua-platform",
+            "value": "\"Windows\""
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer yvo2JqGgXlHZqCGpKxvZndJbLv7zLZEYdZG0qr5T60E5DeR+ZtKuqazycICFiSz1eXNoCVcJZrtXbPZJ7x68VPNBtzasXVq18hfO1lpxfLuOwNCWanGatkjcLUGsL0FPJ87XIPbk8TmIeJdAxtIBqyCc8KPzD7QB6ieYMog08uJ/YbXDm9eBNzrlCHzyWuEA1QZavLpCOm4+Q9nPNL+HqOqWOtL2Rm89R+IQIjxPIQAUUQx+/ITOXhVjVriyeG10Yp5LqdpEKPc0zPeSAcP1LpySQaxW5FCoILxUwqkOouKid7p7ovfF6ZQHbPRwElEL5hrrTT4PTSEyJfCicYiLosooAtEjQQXpTwpjIJ+hOppKPrYkCD9Lvt7ri1fqA9VAutj40+RylLnCTXG85X36qjmmksymP9y0Tbkc2PutrX+ftVIogB2iKxyooQDvAIwUnIS7gxgNiVFszZ+gsuc7x1WDQ7Ytzz/mkOfQRVabOH8="
+          },
+          {
+            "key": "Referer",
+            "value": "https://shop.royalchallengers.com/"
+          },
+          {
+            "key": "User-Agent",
+            "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/plain, */*"
+          },
+          {
+            "key": "sec-ch-ua",
+            "value": "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\""
+          },
+          {
+            "key": "sec-ch-ua-mobile",
+            "value": "?0"
+          }
+        ],
+        "url": {
+          "raw": "https://rcbscaleapi.ticketgenie.in/ticket/seatlist/1/1/2",
+          "protocol": "https",
+          "host": [
+            "rcbscaleapi",
+            "ticketgenie",
+            "in"
+          ],
+          "path": [
+            "ticket",
+            "seatlist",
+            "1",
+            "1",
+            "2"
+          ]
+        },
+        "description": "Generated from cURL: curl 'https://rcbscaleapi.ticketgenie.in/ticket/seatlist/1/1/3' \\\r\n  -H 'sec-ch-ua-platform: \"Windows\"' \\\r\n  -H 'Authorization: Bearer yvo2JqGgXlHZqCGpKxvZndJbLv7zLZEYdZG0qr5T60E5DeR+ZtKuqazycICFiSz1eXNoCVcJZrtXbPZJ7x68VPNBtzasXVq18hfO1lpxfLuOwNCWanGatkjcLUGsL0FPJ87XIPbk8TmIeJdAxtIBqyCc8KPzD7QB6ieYMog08uJ/YbXDm9eBNzrlCHzyWuEA1QZavLpCOm4+Q9nPNL+HqOqWOtL2Rm89R+IQIjxPIQAUUQx+/ITOXhVjVriyeG10Yp5LqdpEKPc0zPeSAcP1LpySQaxW5FCoILxUwqkOouKid7p7ovfF6ZQHbPRwElEL5hrrTT4PTSEyJfCicYiLosooAtEjQQXpTwpjIJ+hOppKPrYkCD9Lvt7ri1fqA9VAutj40+RylLnCTXG85X36qjmmksymP9y0Tbkc2PutrX+ftVIogB2iKxyooQDvAIwUnIS7gxgNiVFszZ+gsuc7x1WDQ7Ytzz/mkOfQRVabOH8=' \\\r\n  -H 'Referer: https://shop.royalchallengers.com/' \\\r\n  -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36' \\\r\n  -H 'Accept: application/json, text/plain, */*' \\\r\n  -H 'sec-ch-ua: \"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\"' \\\r\n  -H 'sec-ch-ua-mobile: ?0'"
+      },
+      "response": []
+    },
+    {
+      "name": "Add ticket to cart",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/plain, */*"
+          },
+          {
+            "key": "Origin",
+            "value": "https://shop.royalchallengers.com"
+          },
+          {
+            "key": "Referer",
+            "value": "https://shop.royalchallengers.com/"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer yvo2JqGgXlHZqCGpKxvZndJbLv7zLZEYdZG0qr5T60E5DeR+ZtKuqazycICFiSz1eXNoCVcJZrtXbPZJ7x68VPNBtzasXVq18hfO1lpxfLuOwNCWanGatkjcLUGsL0FPJ87XIPbk8TmIeJdAxtIBqyCc8KPzD7QB6ieYMog08uJ/YbXDm9eBNzrlCHzyWuEA1QZavLpCOm4+Q9nPNL+HqOqWOtL2Rm89R+IQIjxPIQAUUQx+/ITOXhVjVriyeG10Yp5LqdpEKPc0zPeSAcP1LpySQaxW5FCoILxUwqkOouKid7p7ovfF6ZQHbPRwElEL5hrrTT4PTSEyJfCicYiLosooAtEjQQXpTwpjIJ+hOppKPrYkCD9Lvt7ri1fqA9VAutj40+RylLnCTXG85X36qjmmksymP9y0Tbkc2PutrX+ftVIogB2iKxyooQDvAIwUnIS7gxgNiVFszZ+gsuc7x1WDQ7Ytzz/mkOfQRVabOH8=",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"eventGroupId\":1,\"eventId\":1,\"standId\":2,\"qty\":1,\"seatNos\":\"O-4\",\"seatIds\":\"792\"}"
+        },
+        "url": {
+          "raw": "https://rcbscaleapi.ticketgenie.in/checkout/ticketaddtocart",
+          "protocol": "https",
+          "host": [
+            "rcbscaleapi",
+            "ticketgenie",
+            "in"
+          ],
+          "path": [
+            "checkout",
+            "ticketaddtocart"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cart timeout (poll)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, text/plain, */*"
+          },
+          {
+            "key": "Origin",
+            "value": "https://shop.royalchallengers.com"
+          },
+          {
+            "key": "Referer",
+            "value": "https://shop.royalchallengers.com/"
+          }
+        ],
+        "url": {
+          "raw": "https://rcbscaleapi.ticketgenie.in/checkout/ticketcarttimeout",
+          "protocol": "https",
+          "host": [
+            "rcbscaleapi",
+            "ticketgenie",
+            "in"
+          ],
+          "path": [
+            "checkout",
+            "ticketcarttimeout"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Fetch customer profile",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, text/plain, */*"
+          },
+          {
+            "key": "Origin",
+            "value": "https://shop.royalchallengers.com"
+          },
+          {
+            "key": "Referer",
+            "value": "https://shop.royalchallengers.com/"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer yvo2JqGgXlHZqCGpKxvZndJbLv7zLZEYdZG0qr5T60E5DeR+ZtKuqazycICFiSz1eXNoCVcJZrtXbPZJ7x68VPNBtzasXVq18hfO1lpxfLuOwNCWanGatkjcLUGsL0FPJ87XIPbk8TmIeJdAxtIBqyCc8KPzD7QB6ieYMog08uJ/YbXDm9eBNzrlCHzyWuEA1QZavLpCOm4+Q9nPNL+HqOqWOtL2Rm89R+IQIjxPIQAUUQx+/ITOXhVjVriyeG10Yp5LqdpEKPc0zPeSAcP1LpySQaxW5FCoILxUwqkOouKid7p7ovfF6ZQHbPRwElEL5hrrTT4PTSEyJfCicYiLosooAtEjQQXpTwpjIJ+hOppKPrYkCD9Lvt7ri1fqA9VAutj40+RylLnCTXG85X36qjmmksymP9y0Tbkc2PutrX+ftVIogB2iKxyooQDvAIwUnIS7gxgNiVFszZ+gsuc7x1WDQ7Ytzz/mkOfQRVabOH8=",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "https://rcbscaleapi.ticketgenie.in/customer",
+          "protocol": "https",
+          "host": [
+            "rcbscaleapi",
+            "ticketgenie",
+            "in"
+          ],
+          "path": [
+            "customer"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Checkout proceed",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/plain, */*"
+          },
+          {
+            "key": "Origin",
+            "value": "https://shop.royalchallengers.com"
+          },
+          {
+            "key": "Referer",
+            "value": "https://shop.royalchallengers.com/"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"addLine1\":\"\",\"addLine2\":\"\",\"city\":\"\",\"landmark\":\"\",\"pinCode\":\"\",\"state\":\"\",\"firstName\":\"Yatheendra\",\"lastName\":\"BC\",\"email\":\"yathibc@gmail.com\",\"mobile\":\"7899179393\",\"netAmount\":15000,\"recaptchaToken\":\"<token>\"}"
+        },
+        "url": {
+          "raw": "https://rcbscaleapi.ticketgenie.in/checkout/proceed",
+          "protocol": "https",
+          "host": [
+            "rcbscaleapi",
+            "ticketgenie",
+            "in"
+          ],
+          "path": [
+            "checkout",
+            "proceed"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "JPay callback",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/plain, */*"
+          },
+          {
+            "key": "Origin",
+            "value": "https://shop.royalchallengers.com"
+          },
+          {
+            "key": "Referer",
+            "value": "https://shop.royalchallengers.com/"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"order_id\":\"R2026C0324163236B23358\"}"
+        },
+        "url": {
+          "raw": "https://rcbscaleapi.ticketgenie.in/checkout/jpaycallback",
+          "protocol": "https",
+          "host": [
+            "rcbscaleapi",
+            "ticketgenie",
+            "in"
+          ],
+          "path": [
+            "checkout",
+            "jpaycallback"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "merchandiseaddtocart",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "sec-ch-ua-platform",
+            "value": "\"Windows\""
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer yvo2JqGgXlHZqCGpKxvZndJbLv7zLZEYdZG0qr5T60E5DeR+ZtKuqazycICFiSz1eXNoCVcJZrtXbPZJ7x68VPNBtzasXVq18hfO1lpxfLuOwNCWanGatkjcLUGsL0FPJ87XIPbk8TmIeJdAxtIBqyCc8KPzD7QB6ieYMog08uJ/YbXDm9eBNzrlCHzyWuEA1QZavLpCOm4+Q9nPNL+HqOqWOtL2Rm89R+IQIjxPIQAUUQx+/ITOXhVjVriyeG10Yp5LqdpEKPc0zPeSAcP1LpySQaxW5FCoILxUwqkOouKid7p7ovfF6ZQHbPRwElEL5hrrTT4PTSEyJfCicYiLosooAtEjQQXpTwpjIJ+hOppKPrYkCD9Lvt7ri1fqA9VAutj40+RylLnCTXG85X36qjmmksymP9y0Tbkc2PutrX+ftVIogB2iKxyooQDvAIwUnIS7gxgNiVFszZ+gsuc7x1WDQ7Ytzz/mkOfQRVabOH8="
+          },
+          {
+            "key": "Referer",
+            "value": "https://shop.royalchallengers.com/"
+          },
+          {
+            "key": "sec-ch-ua",
+            "value": "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\""
+          },
+          {
+            "key": "sec-ch-ua-mobile",
+            "value": "?0"
+          },
+          {
+            "key": "User-Agent",
+            "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json, text/plain, */*"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"merId\":152,\"catId\":183,\"size\":\"L\",\"qty\":1,\"perText\":\"\",\"perNo\":\"\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://rcbscaleapi.ticketgenie.in/checkout/merchandiseaddtocart",
+          "protocol": "https",
+          "host": [
+            "rcbscaleapi",
+            "ticketgenie",
+            "in"
+          ],
+          "path": [
+            "checkout",
+            "merchandiseaddtocart"
+          ]
+        },
+        "description": "Generated from cURL: curl 'https://rcbscaleapi.ticketgenie.in/checkout/merchandiseaddtocart' \\\r\n  -H 'sec-ch-ua-platform: \"Windows\"' \\\r\n  -H 'Authorization: Bearer yvo2JqGgXlHZqCGpKxvZndJbLv7zLZEYdZG0qr5T60E5DeR+ZtKuqazycICFiSz1eXNoCVcJZrtXbPZJ7x68VPNBtzasXVq18hfO1lpxfLuOwNCWanGatkjcLUGsL0FPJ87XIPbk8TmIeJdAxtIBqyCc8KPzD7QB6ieYMog08uJ/YbXDm9eBNzrlCHzyWuEA1QZavLpCOm4+Q9nPNL+HqOqWOtL2Rm89R+IQIjxPIQAUUQx+/ITOXhVjVriyeG10Yp5LqdpEKPc0zPeSAcP1LpySQaxW5FCoILxUwqkOouKid7p7ovfF6ZQHbPRwElEL5hrrTT4PTSEyJfCicYiLosooAtEjQQXpTwpjIJ+hOppKPrYkCD9Lvt7ri1fqA9VAutj40+RylLnCTXG85X36qjmmksymP9y0Tbkc2PutrX+ftVIogB2iKxyooQDvAIwUnIS7gxgNiVFszZ+gsuc7x1WDQ7Ytzz/mkOfQRVabOH8=' \\\r\n  -H 'Referer: https://shop.royalchallengers.com/' \\\r\n  -H 'sec-ch-ua: \"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\"' \\\r\n  -H 'sec-ch-ua-mobile: ?0' \\\r\n  -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36' \\\r\n  -H 'Accept: application/json, text/plain, */*' \\\r\n  -H 'Content-Type: application/json' \\\r\n  --data-raw '{\"merId\":152,\"catId\":183,\"size\":\"L\",\"qty\":1,\"perText\":\"\",\"perNo\":\"\"}'"
+      },
+      "response": []
+    }
+  ]
+}

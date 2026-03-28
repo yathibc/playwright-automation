@@ -1,0 +1,23 @@
+{
+  "status": "Success",
+  "message": "",
+  "result": [
+    {
+      "event_Group_Code": 1,
+      "event_Code": 1,
+      "event_Name": "Royal Challengers Bengaluru vs Sunrisers Hyderabad",
+      "event_Button_Text": "SOLD OUT",
+      "event_Display_Date": "Sat, Mar 28, 2026 07:30 PM",
+      "event_Date": "2026-03-28T19:30:00",
+      "team_1": "Royal Challengers Bengaluru",
+      "team_2": "Sunrisers Hyderabad",
+      "team_1_Logo": "https://tg3.s3.ap-south-1.amazonaws.com/revents/teams/rcb.png",
+      "team_2_Logo": "https://tg3.s3.ap-south-1.amazonaws.com/revents/teams/SRH.png",
+      "venue_Name": "M.Chinnaswamy Stadium",
+      "city_Name": "Bengaluru",
+      "event_Type": {},
+      "event_Price_Range": "Rs 3750 - 47000",
+      "event_Banner": "https://tg3.s3.ap-south-1.amazonaws.com/revents/teams/"
+    }
+  ]
+}

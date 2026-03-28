@@ -1,0 +1,115 @@
+{
+  "accounts": [
+    {
+      "id": "AIRTEL",
+      "phone": "9535326994",
+      "enabled": true,
+      "standPriority": ["BOAT C STAND", "PUMA SHANTA RANGASWAMY B STAND", "SUN PHARMA A STAND"],
+      "paymentType": "UPI",
+      "checkout": {
+        "firstName": "Varsha",
+        "lastName": "P",
+        "email": "coolvarsha1994@gmail.com",
+        "gender": "FEMALE",
+        "address": "No 15/1 Saptagiri",
+        "locality": "2nd Cross 14th Main Nagendra Block",
+        "pincode": "560050"
+      },
+      "payment": {
+        "upiId": "7899179393@ybl"
+      }
+    },
+    {
+      "id": "JIO",
+      "phone": "8660871166",
+      "enabled": true,
+      "standPriority": ["SUN PHARMA A STAND", "PUMA SHANTA RANGASWAMY B STAND","E STAND"],
+      "paymentType": "UPI",
+      "checkout": {
+        "firstName": "Varsha",
+        "lastName": "P",
+        "email": "yathibc@gmail.com",
+        "gender": "FEMALE",
+        "address": "No 15/1 Saptagiri",
+        "locality": "2nd Cross 14th Main Nagendra Block",
+        "pincode": "560050"
+      },
+      "payment": {
+        "upiId": "7899179393@naviaxis"
+      }
+    },
+    {
+      "id": "BSNL",
+      "phone": "9449196233",
+      "enabled": true,
+      "standPriority": ["E STAND", "CONFIRMTKT H UPPER", "BOAT C STAND"],
+      "paymentType": "UPI",
+      "checkout": {
+        "firstName": "Bharath",
+        "lastName": "B C",
+        "email": "yathiscorpio007@gmail.com",
+        "gender": "FEMALE",
+        "address": "No 15/1 Saptagiri",
+        "locality": "2nd Cross 14th Main Nagendra Block",
+        "pincode": "560050"
+      },
+      "payment": {
+        "upiId": "7899179393@upi"
+      }
+    },
+    {
+      "id": "KIRAN_2976",
+      "phone": "9845312976",
+      "enabled": true,
+      "standPriority":["PUMA SHANTA RANGASWAMY B STAND","BOAT C STAND","SUN PHARMA A STAND"],
+      "paymentType": "UPI",
+      "checkout": {
+        "firstName": "Kiran",
+        "lastName": "SM",
+        "gender": "MALE",
+        "address": "200,14th Main, Nagendra Block",
+        "locality": "BSK 3rd Stage ",
+        "pincode": "560050"
+      },
+      "payment": {
+        "upiId": "9986733929hdfc@ybl"
+      }
+    },
+    {
+      "id": "KIRAN_5824",
+      "phone": "7760325824",
+      "enabled": true,
+      "standPriority":["SUN PHARMA A STAND","E STAND","PUMA SHANTA RANGASWAMY B STAND"],
+      "paymentType": "UPI",
+      "checkout": {
+        "firstName": "Kiran",
+        "lastName": "SM",
+        "gender": "MALE",
+        "address": "200,14th Main, Nagendra Block",
+        "locality": "BSK 3rd Stage ",
+        "pincode": "560050"
+      },
+      "payment": {
+        "upiId": "kiranachar1520@okhdfcbank"
+      }
+    },
+    {
+      "id": "KIRAN_6878",
+      "phone": "9686616878",
+      "enabled": true,
+      "standPriority":["CONFIRMTKT H UPPER","E STAND","BOAT C STAND"],
+      "paymentType": "UPI",
+      "checkout": {
+        "firstName": "Roopa",
+        "lastName": "M",
+        "gender": "FEMALE",
+        "address": "200,14th Main, Nagendra Block",
+        "locality": "BSK 3rd Stage ",
+        "pincode": "560050"
+      },
+      "payment": {
+        "upiId": "roopa1520@oksbi"
+      }
+    }
+  ]
+}

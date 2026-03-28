@@ -1,0 +1,277 @@
+{
+  "cookies": [
+    {
+      "name": "_gcl_au",
+      "value": "1.1.2028420961.1774521726",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1782297726,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga",
+      "value": "GA1.1.636082159.1774521726",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1809167963.67296,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "li_sugr",
+      "value": "ad5af348-e6a1-4e35-86e6-2a6a2565f213",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1782383964.239783,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "bcookie",
+      "value": "\"v=2&05a16f6e-f6a1-4a15-848d-52b44262dc6f\"",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1806143964.239969,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "UserMatchHistory",
+      "value": "AQIoApUhd2WXlgAAAZ0pvLBGeAHlpas6RbMmOFC-b6r-GOEyeNsyWUs2ldswIA8QtuAaxxtRozGpaQ",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1777113726.539431,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "AnalyticsSyncHistory",
+      "value": "AQLquikKRQ_C1wAAAZ0pvLBH9w-6Of76-hN54_nxEpHrTRZCkidcAV81ykM6h3G0Y_zNUyNuYdz1GdmobtYv5Q",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1777113726.539473,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "IDE",
+      "value": "AHWqTUnoTIPEycpRlMfJvTEu7lrQpjt-r5dNj4yRVZsOvstPhkGtVokLM2uRY294",
+      "domain": ".doubleclick.net",
+      "path": "/",
+      "expires": 1809081726.624032,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "bscookie",
+      "value": "\"v=1&20260326104205b17b3ec7-34ba-4fdf-8c22-e6a3ea133188AQESgiBQJJ6o8N0hTw7by_WhNMwYNEjl\"",
+      "domain": ".www.linkedin.com",
+      "path": "/",
+      "expires": 1806057727.798154,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "MUID",
+      "value": "3E74F215014B63F433C8E53D000F625E",
+      "domain": ".bing.com",
+      "path": "/",
+      "expires": 1808217727.356366,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "MR",
+      "value": "0",
+      "domain": ".c.bing.com",
+      "path": "/",
+      "expires": 1775126527.356469,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "SRM_B",
+      "value": "3E74F215014B63F433C8E53D000F625E",
+      "domain": ".c.bing.com",
+      "path": "/",
+      "expires": 1808288997.549239,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "MUID",
+      "value": "3E74F215014B63F433C8E53D000F625E",
+      "domain": ".clarity.ms",
+      "path": "/",
+      "expires": 1808217726.454682,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "MR",
+      "value": "0",
+      "domain": ".c.clarity.ms",
+      "path": "/",
+      "expires": 1775126526.45473,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "rtokn",
+      "value": "H2xlzjgDoRU92ZgH0rAoaEbVeCbxYf9AiyZkLr/6jGN2Tk6OasBJhvM16yAnLbUvii2absrW93UV/e4dfza8YK+alo8TMhHX075SOZDhEC8Vt1EBebEOvza7BdDP/zVDF1sOK88jFlNrwzc39S+yU9RXfeaXDsjDSRKNLGUv75daBxY5Kp1nWdYWEiCiaQkBGhmb4AykfUjU8t8Gu5TldxQ5m/EQ5QoE9KO1/oe6y0gjMP9CjXP5jyMLd3ZRyN2zYM7rZWQ71S9aciQ+z03//9nd+yBR9keuQcOuXvmD6M/AF60tE/H5w9G8vU8NTuM4TckxCEouGnSR8dElGkvjDHoDU1S5wJWQ82Mc/wbEQiNX+C0cDz4Iwbp7jDxI23aouCV3vGzg1xGxQgI3HoQ5Ay6MjZXYXgXwExKA3wZ6OH+XoEf3z92D1dS6QE5VuEo42af6dU9M3llBlge/LoOfrCwQ8yVXWdpzg1Mue9qWUsg=",
+      "domain": "shop.royalchallengers.com",
+      "path": "/",
+      "expires": 1777113799,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Strict"
+    },
+    {
+      "name": "CLID",
+      "value": "46a78614792443cf91ad2624c9d3a402.20260326.20270327",
+      "domain": "www.clarity.ms",
+      "path": "/",
+      "expires": 1806128994.729456,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "_clck",
+      "value": "1x4in9t%5E2%5Eg4p%5E0%5E2276",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1806128995,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "lidc",
+      "value": "\"b=OGST04:s=O:r=O:a=O:p=O:g=3720:u=1:x=1:i=1774592995:t=1774679395:v=2:sig=AQH5vjz2m9xTu2Ux0GWOmVRqw67TSf_F\"",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1774679396.472981,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "SM",
+      "value": "C",
+      "domain": ".c.clarity.ms",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "rzp_unified_session_id",
+      "value": "SWDhYnHpuSlghJ",
+      "domain": "shop.royalchallengers.com",
+      "path": "/",
+      "expires": 1774609762,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_47DT5CSCWH",
+      "value": "GS2.1.s1774607963$o4$g1$t1774607968$j55$l0$h0",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1809167968.234682,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_clsk",
+      "value": "1lzdghq%5E1774607968693%5E2%5E1%5Ej.clarity.ms%2Fcollect",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1774694368,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_M00GBFXY2G",
+      "value": "GS2.1.s1774607963$o4$g1$t1774607969$j54$l0$h2039308284",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1809167969.130401,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "https://shop.royalchallengers.com",
+      "localStorage": [
+        {
+          "name": "rudtl",
+          "value": "{\"state\":{\"session\":{\"msg\":\"Y\",\"custId\":1922097,\"name\":\"Bharath\",\"mob\":\"9449196233\",\"pool\":\"O\",\"token\":\"H2xlzjgDoRU92ZgH0rAoaEbVeCbxYf9AiyZkLr/6jGN2Tk6OasBJhvM16yAnLbUvii2absrW93UV/e4dfza8YK+alo8TMhHX075SOZDhEC8Vt1EBebEOvza7BdDP/zVDF1sOK88jFlNrwzc39S+yU9RXfeaXDsjDSRKNLGUv75daBxY5Kp1nWdYWEiCiaQkBGhmb4AykfUjU8t8Gu5TldxQ5m/EQ5QoE9KO1/oe6y0gjMP9CjXP5jyMLd3ZRyN2zYM7rZWQ71S9aciQ+z03//9nd+yBR9keuQcOuXvmD6M/AF60tE/H5w9G8vU8NTuM4TckxCEouGnSR8dElGkvjDHoDU1S5wJWQ82Mc/wbEQiNX+C0cDz4Iwbp7jDxI23aouCV3vGzg1xGxQgI3HoQ5Ay6MjZXYXgXwExKA3wZ6OH+XoEf3z92D1dS6QE5VuEo42af6dU9M3llBlge/LoOfrCwQ8yVXWdpzg1Mue9qWUsg=\",\"ml\":6,\"tl\":10},\"openLogin\":false,\"lastOrderId\":\"\"},\"version\":0}"
+        },
+        {
+          "name": "rzp_checkout_anon_id",
+          "value": "7dd2d88b80ea4c9eb2f4ba3e62ed1c21"
+        },
+        {
+          "name": "rzp_device_id",
+          "value": "1.7d1ff34a8ee30fde6911ee531f5b1c73c476f581.1774521724673.27207575"
+        },
+        {
+          "name": "mrt-store",
+          "value": "{\"state\":{\"cartCount\":0,\"ticCount\":0,\"totalAmount\":0,\"tickets\":[],\"merchandise\":[],\"products\":[],\"addons\":[],\"parking\":[]},\"version\":0}"
+        },
+        {
+          "name": "_gcl_ls",
+          "value": "{\"schema\":\"gcl\",\"version\":1,\"gcl_ctr\":{\"value\":{\"value\":0,\"timeouts\":0,\"errors\":0,\"creationTimeMs\":1774521725506},\"expires\":1782297725506}}"
+        },
+        {
+          "name": "chakra-ui-color-mode",
+          "value": "light"
+        },
+        {
+          "name": "li_adsId",
+          "value": "a553e4cd-a21f-433a-bf4b-dcd8932b39c1"
+        }
+      ]
+    },
+    {
+      "origin": "https://api.razorpay.com",
+      "localStorage": [
+        {
+          "name": "rzp_device_id",
+          "value": "1.7d1ff34a8ee30fde6911ee531f5b1c73c476f581.1774521724673.27207575"
+        }
+      ]
+    },
+    {
+      "origin": "https://www.google.com",
+      "localStorage": [
+        {
+          "name": "rc::a",
+          "value": "MWFtNnNpZjFubXR3cmY="
+        }
+      ]
+    }
+  ]
+}

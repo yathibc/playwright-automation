@@ -1,0 +1,23 @@
+{
+  "accounts": [
+    {
+      "id": "AIRTEL",
+      "phone": "9535326994",
+      "enabled": true,
+      "standPriority": ["NOTHING (R) PLATINUM LOUNGE","VENKATESH PRASAD STAND P4", "CONFIRMTKT H UPPER"],
+      "paymentType": "UPI",
+      "checkout": {
+        "firstName": "Varsha",
+        "lastName": "P",
+        "email": "coolvarsha1994@gmail.com",
+        "gender": "FEMALE",
+        "address": "No 15/1 Saptagiri",
+        "locality": "2nd Cross 14th Main Nagendra Block",
+        "pincode": "560050"
+      },
+      "payment": {
+        "upiId": "7899179393@ybl"
+      }
+    }
+  ]
+}

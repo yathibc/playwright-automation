@@ -54,8 +54,30 @@ class KonvaSeatMapResolver {
     const availableFromApi = seatList.filter(s => s.status === 'O' && s.bucket === this.pool);
     logger.info(`Seat-list has ${seatList.length} total, ${availableFromApi.length} available for pool "${this.pool}"`);
 
+    // Normalize template ordering before coordinate calculation.
+    // The website's renderer depends on template order when walking seats row-by-row.
+    // If intercepted template rows arrive unsorted, the calculated y positions drift,
+    // which can make a logged/API row like "O" click on a visually different row.
+    const normalizedTemplate = [...seatTemplate].sort((a, b) => {
+      const rowOrderA = Number(a.row_Order || 0);
+      const rowOrderB = Number(b.row_Order || 0);
+      if (rowOrderA !== rowOrderB) return rowOrderB - rowOrderA;
+
+      const boxA = Number(a.box || 0);
+      const boxB = Number(b.box || 0);
+      if (boxA !== boxB) return boxA - boxB;
+
+      const seatNoA = Number(a.seat_No || 0);
+      const seatNoB = Number(b.seat_No || 0);
+      if (seatNoA !== seatNoB) return seatNoA - seatNoB;
+
+      const serialA = Number(a.serial_No || 0);
+      const serialB = Number(b.serial_No || 0);
+      return serialA - serialB;
+    });
+
     // Merge availability info into template
-    const mergedTemplate = seatTemplate.map(templateSeat => {
+    const mergedTemplate = normalizedTemplate.map(templateSeat => {
       const match = availableFromApi.find(apiSeat =>
         apiSeat.stand_Code === templateSeat.stand_Code &&
         apiSeat.box === templateSeat.box &&
@@ -85,6 +107,13 @@ class KonvaSeatMapResolver {
 
     logger.info(`Resolved ${this.resolvedSeats.length} total seats, ${this.availableSeats.length} available,
      layout: ${this.layoutWidth}x${this.layoutHeight}`);
+
+    if (this.availableSeats.length > 0) {
+      const sample = this.availableSeats.slice(0, 5)
+        .map(seat => `${seat.row}${seat.seat_No}(rowOrder=${seat.row_Order}, x=${seat.x}, y=${seat.y})`)
+        .join(', ');
+      logger.info(`Sample available seat mapping: ${sample}`);
+    }
 
     return this.resolvedSeats;
   }
@@ -156,11 +185,13 @@ class KonvaSeatMapResolver {
    *   - drag offset (stageX, stageY) — starts at (0, 0)
    *   - The canvas element itself has a bounding rect on the page
    *
-   * When browser zoom is applied (e.g., 50%), getBoundingClientRect() already
-   * returns zoomed coordinates, so we do NOT need to multiply by zoom again.
-   * The CSS zoom affects the layout coordinates that getBoundingClientRect reports.
-   * However, Playwright's mouse.click() operates in CSS pixels (pre-zoom),
-   * so we need to divide by the zoom factor to get the correct click position.
+   * When browser zoom is applied (e.g., 50%), getBoundingClientRect() returns the
+   * VISUAL position on screen after zoom has been applied.
+   *
+   * In practice for this flow, Playwright mouse.click() should use the same viewport
+   * coordinates returned from the zoomed canvas bounding rect. Dividing by zoom pushes
+   * clicks far outside the seat map, so we keep click coords aligned with the visual
+   * marker position.
    *
    * @param {Object} seat - Seat with .x and .y (Konva internal coords)
    * @param {Object} canvasRect - { left, top } from canvas.getBoundingClientRect()
@@ -174,17 +205,17 @@ class KonvaSeatMapResolver {
     const seatSize = 18;
     const centerOffset = seatSize / 2;
 
-    // Canvas rect is in zoomed CSS pixels. Konva coords * stage scale give position within canvas.
-    // With CSS zoom, getBoundingClientRect returns zoomed values, but Playwright clicks in
-    // viewport coordinates. We need to account for the zoom factor.
-    const rawX = canvasRect.left + ((seat.x + centerOffset) * scale) + stageOffset.x;
-    const rawY = canvasRect.top + ((seat.y + centerOffset) * scale) + stageOffset.y;
+    // Canvas rect is already reported in the page's current CSS pixel coordinate system.
+    // Playwright mouse.click() also expects viewport CSS pixels, so we should use those
+    // values directly. Applying the zoom factor again shifts the click target away from
+    // the actual rendered seat position.
+    const markerX = canvasRect.left + ((seat.x + centerOffset) * scale) + stageOffset.x;
+    const markerY = canvasRect.top + ((seat.y + centerOffset) * scale) + stageOffset.y;
 
-    // Playwright mouse.click uses viewport coordinates which are affected by CSS zoom
-    const browserX = rawX * browserZoom;
-    const browserY = rawY * browserZoom;
+    const browserX = markerX;
+    const browserY = markerY;
 
-    return { browserX, browserY };
+    return { browserX, browserY, markerX, markerY };
   }
 
   /**
@@ -300,8 +331,17 @@ class KonvaSeatMapResolver {
   async getCanvasState(page) {
     return await page.evaluate(() => {
       // Find the Konva canvas element (the seat map modal uses a full-screen Stage)
-      const canvasEl = document.querySelector('.konvajs-content canvas')
-                    || document.querySelector('canvas');
+      const canvasCandidates = Array.from(document.querySelectorAll('.konvajs-content canvas, canvas'));
+      const canvasEl = canvasCandidates
+        .filter(canvas => {
+          const rect = canvas.getBoundingClientRect();
+          return rect.width > 50 && rect.height > 50;
+        })
+        .sort((a, b) => {
+          const rectA = a.getBoundingClientRect();
+          const rectB = b.getBoundingClientRect();
+          return (rectB.width * rectB.height) - (rectA.width * rectA.height);
+        })[0];
       if (!canvasEl) return null;
 
       const rect = canvasEl.getBoundingClientRect();
@@ -314,7 +354,26 @@ class KonvaSeatMapResolver {
       try {
         // Konva stores stages globally
         if (window.Konva && window.Konva.stages && window.Konva.stages.length > 0) {
-          const stage = window.Konva.stages[window.Konva.stages.length - 1];
+          const stages = window.Konva.stages;
+          const matchedStage = stages.find(stage => {
+            try {
+              const stageCanvas = stage.container()?.querySelector('canvas');
+              return stageCanvas === canvasEl;
+            } catch (_) {
+              return false;
+            }
+          });
+
+          const stage = matchedStage || stages.find(stage => {
+            try {
+              const stageCanvas = stage.container()?.querySelector('canvas');
+              const stageRect = stageCanvas?.getBoundingClientRect();
+              return stageRect && Math.abs(stageRect.width - rect.width) < 2 && Math.abs(stageRect.height - rect.height) < 2;
+            } catch (_) {
+              return false;
+            }
+          }) || stages[0];
+
           scale = stage.scaleX() || 0.65;
           stageX = stage.x() || 0;
           stageY = stage.y() || 0;
@@ -369,7 +428,7 @@ class KonvaSeatMapResolver {
 
     // Convert each available seat to browser coordinates (accounting for zoom)
     const browserSeats = this.availableSeats.map(seat => {
-      const { browserX, browserY } = this.toBrowserCoords(
+      const { browserX, browserY, markerX, markerY } = this.toBrowserCoords(
         seat,
         canvasState.canvasRect,
         canvasState.scale,
@@ -390,6 +449,8 @@ class KonvaSeatMapResolver {
         eventId: seat.eventId,
         konvaX: seat.x,
         konvaY: seat.y,
+        markerX,
+        markerY,
         box: seat.box,
         // No DOM element for canvas seats
         element: null

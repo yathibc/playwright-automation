@@ -47,8 +47,5 @@ tmp/
 *.seed
 
 # Secrets and env configs
-.env
-*.env
-accounts*.json
 *.key
 *.pem

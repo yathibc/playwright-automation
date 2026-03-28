@@ -80,19 +80,21 @@ class BrowserManager {
 
   // ── Zoom Control ────────────────────────────────────────────────────
   /**
-   * Set browser zoom level so the entire stand view fits on screen.
-   * Uses CSS zoom property. Default: 50% (config.browser.zoomLevel = 0.5).
-   * Must account for this zoom when calculating click coordinates.
+   * Set page zoom using CSS zoom.
+   *
+   * This was more stable for this ticket flow than CDP page scaling. We keep it
+   * simple and let coordinate conversion work from the actual zoomed canvas rect.
    */
   async applyZoom(level = null) {
     const zoom = level || config.browser.zoomLevel || 0.5;
     const pct = Math.round(zoom * 100);
     try {
       await this.page.evaluate((p) => {
+        document.documentElement.style.zoom = p + '%';
         document.body.style.zoom = p + '%';
       }, pct);
       this._zoomApplied = true;
-      logger.info(`Browser zoom set to ${pct}%`);
+      logger.info(`Browser zoom set to ${pct}% via CSS zoom`);
     } catch (error) {
       logger.warn(`Failed to apply browser zoom: ${error.message}`);
     }
@@ -104,6 +106,7 @@ class BrowserManager {
   async resetZoom() {
     try {
       await this.page.evaluate(() => {
+        document.documentElement.style.zoom = '100%';
         document.body.style.zoom = '100%';
       });
       this._zoomApplied = false;
@@ -306,6 +309,58 @@ class BrowserManager {
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  async showClickMarker(x, y, label = 'Click') {
+    if (!this.page) return;
+    try {
+      await this.page.evaluate(({ xPos, yPos, text }) => {
+        const marker = document.createElement('div');
+        marker.className = 'playwright-click-marker';
+        marker.style.position = 'fixed';
+        marker.style.left = `${xPos}px`;
+        marker.style.top = `${yPos}px`;
+        marker.style.width = '24px';
+        marker.style.height = '24px';
+        marker.style.marginLeft = '-12px';
+        marker.style.marginTop = '-12px';
+        marker.style.border = '3px solid #ff1744';
+        marker.style.borderRadius = '50%';
+        marker.style.background = 'rgba(255, 23, 68, 0.18)';
+        marker.style.boxShadow = '0 0 0 9999px rgba(255, 23, 68, 0.05)';
+        marker.style.zIndex = '2147483647';
+        marker.style.pointerEvents = 'none';
+        marker.style.transition = 'transform 0.15s ease-out, opacity 0.3s ease-out';
+
+        const label = document.createElement('div');
+        label.textContent = text;
+        label.style.position = 'absolute';
+        label.style.left = '16px';
+        label.style.top = '-10px';
+        label.style.background = '#ff1744';
+        label.style.color = '#fff';
+        label.style.padding = '2px 6px';
+        label.style.borderRadius = '10px';
+        label.style.fontSize = '12px';
+        label.style.fontWeight = '700';
+        label.style.whiteSpace = 'nowrap';
+        label.style.fontFamily = 'Arial, sans-serif';
+        marker.appendChild(label);
+
+        document.body.appendChild(marker);
+
+        requestAnimationFrame(() => {
+          marker.style.transform = 'scale(1.2)';
+        });
+
+        setTimeout(() => {
+          marker.style.opacity = '0';
+          setTimeout(() => marker.remove(), 300);
+        }, 900);
+      }, { xPos: x, yPos: y, text: label });
+    } catch (error) {
+      logger.debug(`Unable to show click marker: ${error.message}`);
     }
   }
 
