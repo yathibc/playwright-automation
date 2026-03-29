@@ -37,6 +37,7 @@ class TicketAutomationSystem {
         this.tag = `[${account.id}]`;
         this.telegram = telegram;
         this.globalDeadline = Date.now() + (config.timeouts.globalMinutes * 60 * 1000);
+        this.discoveredEvent = null;
     }
 
     getStandPriority() {
@@ -93,6 +94,11 @@ class TicketAutomationSystem {
         }
     }
 
+    async preload() {
+        logger.info(`${this.tag} Preloading browser and login state for shared-event flow...`);
+        return await this.initializeAndLogin();
+    }
+
     // ── Phase 1: Initialize + Login ─────────────────────────────────────
 
     async initializeAndLogin() {
@@ -143,8 +149,20 @@ class TicketAutomationSystem {
         }
 
         logger.info(`${this.tag} ✅ Phase 2 complete: Event "${event.event_Name}" (code: ${event.event_Code})`);
+        this.discoveredEvent = event;
         await this.telegram.sendMatchFound(`Event: ${event.event_Name}\nCode: ${event.event_Code}\nAccount: ${this.account.id}`);
         return event;
+    }
+
+    async startWithKnownEvent(event) {
+        if (!event) {
+            logger.error(`${this.tag} Cannot start booking flow without a discovered event`);
+            return false;
+        }
+
+        this.discoveredEvent = event;
+        logger.info(`${this.tag} Starting booking flow with shared discovered event ${event.event_Code}`);
+        return await this.executeBookingFlow(event);
     }
 
     // ── Phase 3-7: Booking Flow ─────────────────────────────────────────
@@ -896,6 +914,7 @@ async function main() {
     }
 
     logger.info(`🚀 Launching ${enabledAccounts.length} parallel session(s): ${enabledAccounts.map(a => a.id).join(', ')}`);
+    logger.info(`🛰 Shared-event mode enabled: preload all accounts, poll eventlist with scout account only, then broadcast event to all accounts`);
 
     // Send Telegram startup notification
     await telegram.sendStartup(
@@ -947,17 +966,62 @@ async function main() {
     });
 
     try {
-        // Launch all accounts in parallel — each runs the full booking flow independently
-        const results = await Promise.allSettled(
-            systems.map(system => system.start())
+        // Phase A: preload/login all accounts first
+        logger.info('Phase A: Preloading all accounts and restoring login state before event polling...');
+        const preloadResults = await Promise.allSettled(
+            systems.map(system => system.preload())
+        );
+
+        const readySystems = [];
+        const preloadFailures = [];
+
+        preloadResults.forEach((result, index) => {
+            const system = systems[index];
+            const account = enabledAccounts[index];
+
+            if (result.status === 'fulfilled' && result.value === true) {
+                readySystems.push(system);
+                logger.info(`✅ [${account.id}] Preload/login completed`);
+            } else {
+                const reason = result.status === 'rejected' ? result.reason?.message : 'preload/login failed';
+                preloadFailures.push(account.id);
+                logger.warn(`❌ [${account.id}] Preload/login failed: ${reason}`);
+            }
+        });
+
+        if (readySystems.length === 0) {
+            logger.error('❌ No accounts are ready after preload/login. Exiting.');
+            await Promise.allSettled(systems.map(s => s.closeBrowser()));
+            process.exit(1);
+        }
+
+        // Phase B: scout account polls eventlist once for all accounts
+        const scoutSystem = readySystems[0];
+        logger.info(`${scoutSystem.tag} 🛰 Selected as scout account for single eventlist polling`);
+
+        const sharedEvent = await scoutSystem.discoverEvent();
+        if (!sharedEvent) {
+            logger.error(`${scoutSystem.tag} ❌ Scout account could not discover target event`);
+            await telegram.sendMessage(`⏰ *Shared Event Discovery Failed*\n\nScout account: ${scoutSystem.account.id}\nTarget "${config.match.displayName}" not found within polling window.`);
+            await Promise.allSettled(systems.map(s => s.closeBrowser()));
+            process.exit(1);
+        }
+
+        logger.info(`📣 Shared event discovered by scout: ${sharedEvent.event_Name} (${sharedEvent.event_Code}) — broadcasting to ${readySystems.length} ready account(s)`);
+        await telegram.sendMessage(`📣 *Shared Event Discovered*\n\nScout: ${scoutSystem.account.id}\nEvent: ${sharedEvent.event_Name}\nCode: ${sharedEvent.event_Code}\nReady accounts: ${readySystems.map(s => s.account.id).join(', ')}`);
+
+        // Phase C: all ready accounts jump directly into booking using the shared event
+        const bookingResults = await Promise.allSettled(
+            readySystems.map(system => system.startWithKnownEvent(sharedEvent))
         );
 
         // Summarize results
         const successes = [];
-        const failures = [];
+        const failures = [...preloadFailures];
 
-        results.forEach((result, index) => {
-            const account = enabledAccounts[index];
+        bookingResults.forEach((result, index) => {
+            const system = readySystems[index];
+            const account = system.account;
             if (result.status === 'fulfilled' && result.value === true) {
                 successes.push(account.id);
                 logger.info(`✅ [${account.id}] Booking succeeded!`);
@@ -982,9 +1046,9 @@ async function main() {
             logger.info('Process will stay alive for payment. Press Ctrl+C to exit.');
 
             // Close browsers for failed accounts to free resources
-            for (let i = 0; i < results.length; i++) {
-                if (results[i].status !== 'fulfilled' || results[i].value !== true) {
-                    await systems[i].closeBrowser();
+            for (const system of systems) {
+                if (!successes.includes(system.account.id)) {
+                    await system.closeBrowser();
                 }
             }
         } else {
