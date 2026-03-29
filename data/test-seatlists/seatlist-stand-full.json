@@ -1,0 +1,9 @@
+{
+  "status": "Success",
+  "message": "",
+  "result": [
+    { "i_Id": 759, "event_Code": 1, "venue_Code": 1, "stand_Code": 2, "serial_No": 759, "row": "N", "box": 0, "seat_No": 44, "lm": 0, "row_Order": 13, "row_Gap": 0, "status": "S", "bucket": "D" },
+    { "i_Id": 760, "event_Code": 1, "venue_Code": 1, "stand_Code": 2, "serial_No": 760, "row": "N", "box": 0, "seat_No": 45, "lm": 0, "row_Order": 13, "row_Gap": 0, "status": "S", "bucket": "D" },
+    { "i_Id": 761, "event_Code": 1, "venue_Code": 1, "stand_Code": 2, "serial_No": 761, "row": "N", "box": 0, "seat_No": 46, "lm": 1, "row_Order": 13, "row_Gap": 0, "status": "S", "bucket": "D" }
+  ]
+}
