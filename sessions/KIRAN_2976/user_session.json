@@ -1,16 +1,6 @@
 {
   "cookies": [
     {
-      "name": "CLID",
-      "value": "1a209576e7e44c3b8e72b2068610d271.20260327.20270327",
-      "domain": "www.clarity.ms",
-      "path": "/",
-      "expires": 1806128992.497211,
-      "httpOnly": true,
-      "secure": true,
-      "sameSite": "None"
-    },
-    {
       "name": "_gcl_au",
       "value": "1.1.749520016.1774592993",
       "domain": ".royalchallengers.com",
@@ -25,17 +15,7 @@
       "value": "GA1.1.2145189225.1774592993",
       "domain": ".royalchallengers.com",
       "path": "/",
-      "expires": 1809167964.65216,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
-      "name": "_clck",
-      "value": "p38r3t%5E2%5Eg4p%5E0%5E2277",
-      "domain": ".royalchallengers.com",
-      "path": "/",
-      "expires": 1806128993,
+      "expires": 1809359767.68829,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -45,7 +25,7 @@
       "value": "ff02c721-2291-4d68-9c35-d8238bcc8ad6",
       "domain": ".linkedin.com",
       "path": "/",
-      "expires": 1782383965.099132,
+      "expires": 1782575768.28448,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -55,37 +35,7 @@
       "value": "\"v=2&e569bc54-b0c1-46c7-85fd-f14fd0e7379e\"",
       "domain": ".linkedin.com",
       "path": "/",
-      "expires": 1806143966.099359,
-      "httpOnly": false,
-      "secure": true,
-      "sameSite": "None"
-    },
-    {
-      "name": "lidc",
-      "value": "\"b=TGST04:s=T:r=T:a=T:p=T:g=3647:u=1:x=1:i=1774592993:t=1774679393:v=2:sig=AQFY-EQomoHw3WsR1BGSbAyWV6kD_Aq9\"",
-      "domain": ".linkedin.com",
-      "path": "/",
-      "expires": 1774679395.112986,
-      "httpOnly": false,
-      "secure": true,
-      "sameSite": "None"
-    },
-    {
-      "name": "UserMatchHistory",
-      "value": "AQLXd3_pTarJVAAAAZ0t_CmtoRzGKs9yW85jIwh__qFc6pMPkWZYJVbCDg4E3sIeUDDj6nO871eYNQ",
-      "domain": ".linkedin.com",
-      "path": "/",
-      "expires": 1777184994.401607,
-      "httpOnly": false,
-      "secure": true,
-      "sameSite": "None"
-    },
-    {
-      "name": "AnalyticsSyncHistory",
-      "value": "AQICg8TjKkdTNgAAAZ0t_CmtsKczHRRKnPLjMcakkcTG3F5R1tdF951fFIxQSgbej4lW-3Ctqk_-SOHalw35IA",
-      "domain": ".linkedin.com",
-      "path": "/",
-      "expires": 1777184994.40165,
+      "expires": 1806335768.284607,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -135,17 +85,7 @@
       "value": "383AFA15B298661F34AFED3CB3F567BF",
       "domain": ".c.bing.com",
       "path": "/",
-      "expires": 1808288996.385214,
-      "httpOnly": false,
-      "secure": true,
-      "sameSite": "None"
-    },
-    {
-      "name": "SM",
-      "value": "C",
-      "domain": ".c.clarity.ms",
-      "path": "/",
-      "expires": -1,
+      "expires": 1808469442.853535,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -181,41 +121,101 @@
       "sameSite": "Strict"
     },
     {
+      "name": "CLID",
+      "value": "1a209576e7e44c3b8e72b2068610d271.20260327.20270329",
+      "domain": "www.clarity.ms",
+      "path": "/",
+      "expires": 1806309439.372915,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "_clck",
+      "value": "p38r3t%5E2%5Eg4r%5E0%5E2277",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1806309440,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "UserMatchHistory",
+      "value": "AQL-dQK_hwHkDQAAAZ04vY3T2dAnBIQJD_savf94oJExfs1kcC2kX0JoiimiM73gThve7DvA-d2bUQ",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1777365440.80176,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "AnalyticsSyncHistory",
+      "value": "AQKY1-VCGbTtwQAAAZ04vY3TkXuKTBeKiGsgvc5quu5TCkVwAlMM9fHW8fpVmJQkaF0Y0vsILo5Hx3bSTa743Q",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1777365440.80183,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "lidc",
+      "value": "\"b=VGST04:s=V:r=V:a=V:p=V:g=3733:u=1:x=1:i=1774773439:t=1774859839:v=2:sig=AQHzSZmQA4rgtV4gygs2vGFDzgKc1YQA\"",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1774859840.802078,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "SM",
+      "value": "C",
+      "domain": ".c.clarity.ms",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
       "name": "rzp_unified_session_id",
-      "value": "SWDhZV7KIwVA3U",
+      "value": "SX6AN8ZU5A4xDt",
       "domain": "shop.royalchallengers.com",
       "path": "/",
-      "expires": 1774609763,
+      "expires": 1774801566,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "_ga_47DT5CSCWH",
-      "value": "GS2.1.s1774607963$o3$g1$t1774607968$j55$l0$h0",
+      "value": "GS2.1.s1774799767$o5$g1$t1774799775$j52$l0$h0",
       "domain": ".royalchallengers.com",
       "path": "/",
-      "expires": 1809167968.91944,
+      "expires": 1809359775.896479,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "_clsk",
-      "value": "7ocgn%5E1774607969408%5E2%5E0%5Ej.clarity.ms%2Fcollect",
+      "value": "1ddzjm9%5E1774799776472%5E2%5E0%5Ej.clarity.ms%2Fcollect",
       "domain": ".royalchallengers.com",
       "path": "/",
-      "expires": 1774694369,
+      "expires": 1774886176,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "_ga_M00GBFXY2G",
-      "value": "GS2.1.s1774607964$o3$g1$t1774607969$j55$l0$h895451849",
+      "value": "GS2.1.s1774799767$o5$g1$t1774799776$j51$l0$h1553607171",
       "domain": ".royalchallengers.com",
       "path": "/",
-      "expires": 1809167969.812595,
+      "expires": 1809359776.701056,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"

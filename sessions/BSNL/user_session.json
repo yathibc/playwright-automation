@@ -15,7 +15,7 @@
       "value": "GA1.1.636082159.1774521726",
       "domain": ".royalchallengers.com",
       "path": "/",
-      "expires": 1809167963.67296,
+      "expires": 1809359769.61237,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -25,7 +25,7 @@
       "value": "ad5af348-e6a1-4e35-86e6-2a6a2565f213",
       "domain": ".linkedin.com",
       "path": "/",
-      "expires": 1782383964.239783,
+      "expires": 1782575769.813124,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -35,27 +35,7 @@
       "value": "\"v=2&05a16f6e-f6a1-4a15-848d-52b44262dc6f\"",
       "domain": ".linkedin.com",
       "path": "/",
-      "expires": 1806143964.239969,
-      "httpOnly": false,
-      "secure": true,
-      "sameSite": "None"
-    },
-    {
-      "name": "UserMatchHistory",
-      "value": "AQIoApUhd2WXlgAAAZ0pvLBGeAHlpas6RbMmOFC-b6r-GOEyeNsyWUs2ldswIA8QtuAaxxtRozGpaQ",
-      "domain": ".linkedin.com",
-      "path": "/",
-      "expires": 1777113726.539431,
-      "httpOnly": false,
-      "secure": true,
-      "sameSite": "None"
-    },
-    {
-      "name": "AnalyticsSyncHistory",
-      "value": "AQLquikKRQ_C1wAAAZ0pvLBH9w-6Of76-hN54_nxEpHrTRZCkidcAV81ykM6h3G0Y_zNUyNuYdz1GdmobtYv5Q",
-      "domain": ".linkedin.com",
-      "path": "/",
-      "expires": 1777113726.539473,
+      "expires": 1806335769.813293,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -105,7 +85,7 @@
       "value": "3E74F215014B63F433C8E53D000F625E",
       "domain": ".c.bing.com",
       "path": "/",
-      "expires": 1808288997.549239,
+      "expires": 1808469442.273565,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -142,30 +122,50 @@
     },
     {
       "name": "CLID",
-      "value": "46a78614792443cf91ad2624c9d3a402.20260326.20270327",
+      "value": "46a78614792443cf91ad2624c9d3a402.20260326.20270329",
       "domain": "www.clarity.ms",
       "path": "/",
-      "expires": 1806128994.729456,
+      "expires": 1806309439.277039,
       "httpOnly": true,
       "secure": true,
       "sameSite": "None"
     },
     {
       "name": "_clck",
-      "value": "1x4in9t%5E2%5Eg4p%5E0%5E2276",
+      "value": "1x4in9t%5E2%5Eg4r%5E0%5E2276",
       "domain": ".royalchallengers.com",
       "path": "/",
-      "expires": 1806128995,
+      "expires": 1806309440,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
-      "name": "lidc",
-      "value": "\"b=OGST04:s=O:r=O:a=O:p=O:g=3720:u=1:x=1:i=1774592995:t=1774679395:v=2:sig=AQH5vjz2m9xTu2Ux0GWOmVRqw67TSf_F\"",
+      "name": "UserMatchHistory",
+      "value": "AQK0hNjffG0NygAAAZ04vY5qZ1iftz037OZdo5KJO7dgLmOzV3H6zLtKsxpksiN3_w_v2qRnprYzWg",
       "domain": ".linkedin.com",
       "path": "/",
-      "expires": 1774679396.472981,
+      "expires": 1777365440.942855,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "AnalyticsSyncHistory",
+      "value": "AQJNVqiO-ycqPgAAAZ04vY5qVYn8dtIGt9U5b3WlH7tpL8rZUoMH3Et0ATeNd2HEoc7yEMkZeFljozlFhvMnjQ",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1777365440.942922,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "lidc",
+      "value": "\"b=VGST04:s=V:r=V:a=V:p=V:g=3733:u=1:x=1:i=1774773440:t=1774859840:v=2:sig=AQEcivMEupGd3bip3r4jPps0b8sIQ1S3\"",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1774859841.943055,
       "httpOnly": false,
       "secure": true,
       "sameSite": "None"
@@ -182,40 +182,40 @@
     },
     {
       "name": "rzp_unified_session_id",
-      "value": "SWDhYnHpuSlghJ",
+      "value": "SX6AOyFXTiJEOC",
       "domain": "shop.royalchallengers.com",
       "path": "/",
-      "expires": 1774609762,
+      "expires": 1774801568,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "_ga_47DT5CSCWH",
-      "value": "GS2.1.s1774607963$o4$g1$t1774607968$j55$l0$h0",
+      "value": "GS2.1.s1774799769$o6$g1$t1774799775$j54$l0$h0",
       "domain": ".royalchallengers.com",
       "path": "/",
-      "expires": 1809167968.234682,
+      "expires": 1809359775.909909,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "_clsk",
-      "value": "1lzdghq%5E1774607968693%5E2%5E1%5Ej.clarity.ms%2Fcollect",
+      "value": "11zhmts%5E1774799776319%5E2%5E0%5Ej.clarity.ms%2Fcollect",
       "domain": ".royalchallengers.com",
       "path": "/",
-      "expires": 1774694368,
+      "expires": 1774886176,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "_ga_M00GBFXY2G",
-      "value": "GS2.1.s1774607963$o4$g1$t1774607969$j54$l0$h2039308284",
+      "value": "GS2.1.s1774799769$o6$g1$t1774799776$j53$l0$h1907450408",
       "domain": ".royalchallengers.com",
       "path": "/",
-      "expires": 1809167969.130401,
+      "expires": 1809359776.735531,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
