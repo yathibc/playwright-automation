@@ -22,7 +22,7 @@
     {
       "id": "JIO",
       "phone": "8660871166",
-      "enabled": true,
+      "enabled": false,
       "standPriority": ["SUN PHARMA A STAND", "PUMA SHANTA RANGASWAMY B STAND","E STAND"],
       "paymentType": "UPI",
       "checkout": {
@@ -60,7 +60,7 @@
     {
       "id": "MOM",
       "phone": "9945358752",
-      "enabled": true,
+      "enabled": false,
       "standPriority": ["PUMA SHANTA RANGASWAMY B STAND", "CONFIRMTKT H UPPER", "BOAT C STAND"],
       "paymentType": "UPI",
       "checkout": {
@@ -79,7 +79,7 @@
     {
       "id": "DAD",
       "phone": "9972480772",
-      "enabled": true,
+      "enabled": false,
       "standPriority": ["CONFIRMTKT H UPPER","E STAND","PUMA SHANTA RANGASWAMY B STAND"],
       "paymentType": "UPI",
       "checkout": {
@@ -98,7 +98,7 @@
     {
       "id": "KIRAN_2976",
       "phone": "9845312976",
-      "enabled": true,
+      "enabled": false,
       "standPriority":["PUMA SHANTA RANGASWAMY B STAND","BOAT C STAND","SUN PHARMA A STAND"],
       "paymentType": "UPI",
       "checkout": {
@@ -116,7 +116,7 @@
     {
       "id": "KIRAN_5824",
       "phone": "7760325824",
-      "enabled": true,
+      "enabled": false,
       "standPriority":["SUN PHARMA A STAND","E STAND","PUMA SHANTA RANGASWAMY B STAND"],
       "paymentType": "UPI",
       "checkout": {
@@ -134,7 +134,7 @@
     {
       "id": "KIRAN_6878",
       "phone": "9686616878",
-      "enabled": true,
+      "enabled": false,
       "standPriority":["CONFIRMTKT H UPPER","E STAND","BOAT C STAND"],
       "paymentType": "UPI",
       "checkout": {
@@ -152,7 +152,7 @@
     {
       "id": "SAGAR_SIS",
       "phone": "6360091800",
-      "enabled": true,
+      "enabled": false,
       "standPriority":["BOAT C STAND", "SUN PHARMA A STAND", "PUMA SHANTA RANGASWAMY B STAND"],
       "paymentType": "UPI",
       "checkout": {
@@ -170,7 +170,7 @@
     {
       "id": "SAGAR_MOM",
       "phone": "8971522392",
-      "enabled": true,
+      "enabled": false,
       "standPriority":["SUN PHARMA A STAND","E STAND","PUMA SHANTA RANGASWAMY B STAND"],
       "paymentType": "UPI",
       "checkout": {
@@ -188,7 +188,7 @@
     {
       "id": "SAGAR_DAD",
       "phone": "8971765045",
-      "enabled": true,
+      "enabled": false,
       "standPriority":["CONFIRMTKT H UPPER","E STAND","BOAT C STAND"],
       "paymentType": "UPI",
       "checkout": {

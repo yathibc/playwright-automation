@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkv2=globalThis.webpackChunkv2||[]).push([[40719],{56769:(e,n,t)=>{t.r(n),t.d(n,{selectedCurrencyChangeListener:()=>l,selectedCurrencyOption:()=>s,setSelectedCurrencyOption:()=>r});var c=t(31624);const s=(0,c.fZ)(null);function r(e){s.set(e)}const l=()=>(0,c.nK)(s,(e=>e))}}]);

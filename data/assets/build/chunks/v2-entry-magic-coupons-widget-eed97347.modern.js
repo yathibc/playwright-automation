@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkv2=globalThis.webpackChunkv2||[]).push([[59046],{25994:(a,h,s)=>{s.r(h),s.d(h,{component:()=>b.Z});var b=s(2222)}}]);

@@ -99,6 +99,22 @@ class TicketAutomationSystem {
         return await this.initializeAndLogin();
     }
 
+    async checkLogin() {
+        logger.info(`${this.tag} Checking login state for shared-event flow...`);
+        // Login (session reuse or OTP)
+        this.login = new LoginManager(this.browser, this.account, this.telegram);
+        const loggedIn = await this.login.detectAndHandleLogin();
+        if (!loggedIn) {
+            logger.error(`${this.tag} Login failed or timed out`);
+            await this.browser.takeScreenshot(`login_failed_${this.account.id}.png`);
+            await this.telegram.sendLoginFailed(this.account.id);
+            return false;
+        }
+        return true;
+    }
+
+
+
     // ── Phase 1: Initialize + Login ─────────────────────────────────────
 
     async initializeAndLogin() {
@@ -1011,6 +1027,9 @@ async function main() {
         await telegram.sendMessage(`📣 *Shared Event Discovered*\n\nScout: ${scoutSystem.account.id}\nEvent: ${sharedEvent.event_Name}\nCode: ${sharedEvent.event_Code}\nReady accounts: ${readySystems.map(s => s.account.id).join(', ')}`);
 
         // Phase C: all ready accounts jump directly into booking using the shared event
+        await Promise.allSettled(
+            readySystems.map(system => system.checkLogin())
+        );
         const bookingResults = await Promise.allSettled(
             readySystems.map(system => system.startWithKnownEvent(sharedEvent))
         );

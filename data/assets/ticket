@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+  <meta name="color-scheme" content="only light">
+
+  <title>Royal Challengers Bengaluru Official Website | RCB</title>
+  <meta name="description" content="Royal Challengers Bengaluru" />
+  <meta name="keywords" content="Royal Challengers Bengaluru" />
+  <link rel="canonical" href="https://royalchallengers.com/" />
+  <meta name="robots" content="index, follow" />
+  <link rel="shortlink" href="https://royalchallengers.com/" />
+  <meta name="news_keywords" content="Royal Challengers Bengaluru" />
+  <meta name="standout" content="Royal Challengers Bengaluru" />
+  <meta property="og:site_name" content="Home" />
+  <meta property="og:type" content="Home" />
+  <meta property="og:url" content="https://royalchallengers.com/home" />
+  <meta property="og:title" content="Royal Challengers Bengaluru" />
+  <meta name="MobileOptimized" content="width" />
+  <meta name="HandheldFriendly" content="true" />
+  <link rel="icon" href="https://www.royalchallengers.com/PRRCB01/public/rcb-logo-new_1.png" type="image/png" />
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="https://www.google.com/recaptcha/enterprise.js?render=6LcSfv8qAAAAAMU5LLBQoRRabXdbOefyM1Li1mMs"></script>
+
+  <script type="text/javascript">
+    (function (w, d, s, l, i) {
+      w[l] = w[l] || [];
+      w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+      var f = d.getElementsByTagName(s)[0],
+        j = d.createElement(s),
+        dl = l != "dataLayer" ? "&l=" + l : "";
+      j.async = true;
+      j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+      f.parentNode.insertBefore(j, f);
+    })(window, document, "script", "dataLayer", "GTM-NDBK8Q6L");
+  </script>
+  <script type="text/javascript">
+    (function (c, l, a, r, i, t, y) {
+      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+      t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+      y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+    })(window, document, "clarity", "script", "qfq1ymyks1");
+  </script>
+  <!-- <script data-queue-fair-client="ticketgeniesolutions" src="https://files.queue-fair.net/queue-fair-adapter.js"></script> -->
+  <script type="module" crossorigin src="/assets/index-BZdKs_fj.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/react-CNvHvvCs.js">
+  <link rel="modulepreload" crossorigin href="/assets/scheduler-DYLXRpC5.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-dom-DWmyUnet.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-compiler-runtime-DPNL7nyB.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-router-B1MJz6UT.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-icons-6-X1mvsl.js">
+  <link rel="modulepreload" crossorigin href="/assets/lodash.mergewith-FGtcaps8.js">
+  <link rel="modulepreload" crossorigin href="/assets/toggle-selection-BHUZwh74.js">
+  <link rel="modulepreload" crossorigin href="/assets/copy-to-clipboard-OoPgPABw.js">
+  <link rel="modulepreload" crossorigin href="/assets/color2k-BSHHkqKj.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-is-8JwjhRSi.js">
+  <link rel="modulepreload" crossorigin href="/assets/hoist-non-react-statics-Buxaj0Kl.js">
+  <link rel="modulepreload" crossorigin href="/assets/@babel-CiMOpXqq.js">
+  <link rel="modulepreload" crossorigin href="/assets/stylis-YG1R7XFf.js">
+  <link rel="modulepreload" crossorigin href="/assets/@emotion-q8rumQEZ.js">
+  <link rel="modulepreload" crossorigin href="/assets/motion-utils-DBsP9okC.js">
+  <link rel="modulepreload" crossorigin href="/assets/motion-dom-C8PdgYBP.js">
+  <link rel="modulepreload" crossorigin href="/assets/framer-motion-P92NDBjl.js">
+  <link rel="modulepreload" crossorigin href="/assets/aria-hidden-DvXkyWUv.js">
+  <link rel="modulepreload" crossorigin href="/assets/tslib-De9GV7Vy.js">
+  <link rel="modulepreload" crossorigin href="/assets/get-nonce-C-Z93AgS.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-style-singleton-DJ1nwgZS.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-remove-scroll-bar-Ch3WpPzZ.js">
+  <link rel="modulepreload" crossorigin href="/assets/use-sidecar-DA_6ZNEG.js">
+  <link rel="modulepreload" crossorigin href="/assets/use-callback-ref-BW8TMWju.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-remove-scroll-DQJrVEvg.js">
+  <link rel="modulepreload" crossorigin href="/assets/focus-lock-8w9XvAej.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-clientside-effect-DsysaQGB.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-focus-lock-BXx4OcM_.js">
+  <link rel="modulepreload" crossorigin href="/assets/@zag-js-BbAC0Ngi.js">
+  <link rel="modulepreload" crossorigin href="/assets/framesync-BLa_7oTh.js">
+  <link rel="modulepreload" crossorigin href="/assets/@popperjs-CMBiYTiD.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-fast-compare-Cs_AX7TC.js">
+  <link rel="modulepreload" crossorigin href="/assets/@chakra-ui-BC-P3Ifx.js">
+  <link rel="modulepreload" crossorigin href="/assets/@tanstack-CiXUVw9o.js">
+  <link rel="modulepreload" crossorigin href="/assets/js-cookie-Cz0CWeBA.js">
+  <link rel="modulepreload" crossorigin href="/assets/axios-C0Zqfgkc.js">
+  <link rel="modulepreload" crossorigin href="/assets/zustand-0oqzf2gZ.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-error-boundary-D0kCSjj6.js">
+  <link rel="modulepreload" crossorigin href="/assets/invariant-Dcyizxdy.js">
+  <link rel="modulepreload" crossorigin href="/assets/shallowequal-CtzHi0LJ.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-helmet-async-TE00VPGj.js">
+  <link rel="modulepreload" crossorigin href="/assets/three-DyNbDiPJ.js">
+  <link rel="modulepreload" crossorigin href="/assets/@photo-sphere-viewer-v2bONUdC.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-photo-sphere-viewer-xC7CUGJl.js">
+  <link rel="modulepreload" crossorigin href="/assets/konva-BSqBjOm2.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-reconciler-CZKvZ6nU.js">
+  <link rel="modulepreload" crossorigin href="/assets/its-fine-CLQxb3cG.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-konva-BHm5qYFS.js">
+  <link rel="modulepreload" crossorigin href="/assets/use-image-J0qoFvmu.js">
+  <link rel="modulepreload" crossorigin href="/assets/jsencrypt-BceYZi2u.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-hook-form-B31py9X7.js">
+  <link rel="modulepreload" crossorigin href="/assets/tween-functions-BVJkDWXl.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-confetti-JQb9eiO3.js">
+  <link rel="modulepreload" crossorigin href="/assets/prop-types-BKNjMPK8.js">
+  <link rel="modulepreload" crossorigin href="/assets/qr.js-BVLGcLt3.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-qr-code-cJbcg-8m.js">
+  <link rel="modulepreload" crossorigin href="/assets/swiper-D0-OhyEY.js">
+  <link rel="modulepreload" crossorigin href="/assets/react-ga4-BUGuEJah.js">
+  <link rel="stylesheet" crossorigin href="/assets/@photo-sphere-viewer-CQkjs-dc.css">
+  <link rel="stylesheet" crossorigin href="/assets/swiper-CwSRrs7M.css">
+  <link rel="stylesheet" crossorigin href="/assets/index-Cz-lBCkK.css">
+</head>
+
+<body>
+  <noscript>
+    <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NDBK8Q6L" height="0" width="0"
+      style="display: 'none'; visibility: 'hidden'"></iframe>
+  </noscript>
+  <div id="rcb-shop"></div>
+</body>
+
+</html>
