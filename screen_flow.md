@@ -34,33 +34,43 @@
 ## Phase 3: Navigate to Event Page (~2s)
 
 12. **Navigate** to `https://shop.royalchallengers.com/ticket/{event_Code}` (domcontentloaded)
-13. **Apply browser zoom** to 50% (`document.body.style.zoom = '0.5'`) so entire stand view fits
+13. **No CSS zoom** — browser stays at 100%. Seat selection uses the Konva slider zoom (set programmatically to 0.3) instead.
 14. **Start Konva interceptor** BEFORE any stand interaction (captures seat-template + seatlist)
 15. **Dismiss "Continue" popup** if terms/info modal appears
 
 ---
 
-## Phase 4: Stand Selection (~1s per stand)
+## Phase 4: Stand Selection + Seat Modal (~2-5s per stand)
 
-16. **For each stand** in `config.seats.standPriority` (e.g., BOAT C STAND → SUN PHARMA A STAND → PUMA SHANTA RANGASWAMY B STAND → BOAT C STAND):
+16. **For each stand** in `config.seats.standPriority`:
+  - **Ensure no modal is blocking**: If a seat modal is still open from a previous attempt, close it first (click X or press Escape)
   - Click stand using XPath: `//p[text()='CATEGORY']/following-sibling::div[1]//p[text()="{standName}"]`
-  - This opens the seat map modal (Konva canvas)
-17. **Select ticket count**: Click the number button (e.g., "2") in "How many tickets?" section if visible
-18. **Click "Continue"** to proceed to seat map view
-19. **Wait for intercepted data**: seat-template (S3 JSON) + seatlist (API response)
+17. **Wait for intercepted data**: seat-template (S3 JSON) + seatlist (API response) — fires immediately on stand click
   - Timeout: `config.timeouts.seatDataInterceptMs` (default 10s)
+18. **Wait for seat modal to open**: The seat selection modal (Chakra UI dialog with Konva canvas) opens automatically when a stand with `is_seat_selection == "Y"` is clicked and seats are available. No ticket count dialog needed.
+  - Detects modal via: `.chakra-modal__body canvas`, `[role="dialog"] canvas`
+  - Timeout: 8s
+19. **If no seats available or modal doesn't open**: Close modal if open, move to next stand
 
 ---
 
 ## Phase 5: Seat Calculation & Selection — Konva Canvas (~1s)
 
-20. **KonvaSeatMapResolver**: Merge seat-template (layout) with seatlist (availability)
+20. **React settle wait (400ms)**: After the seat modal opens, wait for the website's React to process the seatlist response and render Konva canvas nodes. The modal is freshly created each time (Konva scale resets to default 0.65), and React Query's `useEffect` needs time to merge seatlist data into the seat template and update the Konva stage.
+21. **KonvaSeatMapResolver**: Merge seat-template (layout) with seatlist (availability)
   - Filter: `status === 'O'` (Open) AND `bucket === pool` (Online)
   - Calculate Konva internal coordinates using reverse-engineered algorithm
-  - Find N consecutive available seats in same row
-21. **Convert to browser coordinates**: Account for canvas bounding rect + Konva stage scale + drag offset + 50% browser zoom
-22. **Click each seat** on canvas: `page.mouse.click(browserX, browserY)`
-23. **Click "Proceed"** button
+  - Find N consecutive available seats in same row (randomly selected to avoid parallel conflicts)
+22. **Set Konva stage scale to 0.3** (first attempt only) — programmatically set via `setKonvaStageScale()` (equivalent to slider at minimum). Ensures all seats fit within the modal viewport. Resets drag offset to (0,0). On **retry attempts within the same stand** (e.g., after SEAT NOT AVAILABLE), the scale is NOT re-set to avoid racing with React's own re-rendering of the Konva nodes.
+23. **Canvas stability check**: Read canvas state twice with a 150ms gap. If the bounding rect or scale drifts (React still rendering), wait an extra 300ms before proceeding. This ensures the intercepted data and the rendered canvas are in sync.
+24. **Convert to browser coordinates**: `browserX = (canvasRect.left + (konvaX + 9) * konvaScale) / cssZoom` — accounts for canvas bounding rect, Konva stage scale, drag offset, and CSS zoom (should be 1.0)
+25. **Click each seat** on the **modal canvas**: `page.mouse.click(browserX, browserY)` with 150ms inter-click delay
+26. **Click "Proceed"** button inside the modal
+27. **Modal state management**:
+  - On success: wait for modal to auto-close, then proceed to checkout
+  - On seat-level error (SEAT NOT AVAILABLE): wait 1s for fresh seatlist refetch + 400ms React settle, then retry with new seats (modal stays open, scale preserved)
+  - On stand-level error: close modal, try next stand
+  - On timeout/unknown error: close modal, try next stand
 
 ---
 
@@ -140,8 +150,10 @@
 
 - **API-first**: Event discovery via API, not UI scraping
 - **Event-driven waits**: `page.waitForResponse()` instead of polling DOM
-- **No `waitForTimeout()`**: All waits are event-driven or deadline-based
-- **Browser zoom 50%**: Entire stand view visible without scrolling canvas
+- **Minimal fixed waits**: React settle (400ms), canvas stability check (150ms), seat click delay (150ms) — all tuned to the minimum needed for reliable sync
+- **Konva slider zoom 0.3**: Programmatically set via `setKonvaStageScale()` — all seats visible without CSS zoom artifacts. Scale only set on first attempt per stand; retries skip it to avoid racing with React re-renders.
+- **Canvas stability verification**: Two-read check ensures React has finished rendering before clicking — prevents stale-data misclicks on 2nd+ attempts
 - **`domcontentloaded`**: Instead of `networkidle` for navigation
 - **Parallel data**: seat-template + seatlist intercepted simultaneously
 - **Pre-calculated coordinates**: Konva coords computed while UI renders
+- **Optimized retry path**: SEAT NOT AVAILABLE retry waits only 1s for refetch (down from 1.5s) + 400ms React settle, then immediately retries with fresh data

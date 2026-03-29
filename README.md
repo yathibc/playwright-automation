@@ -27,8 +27,8 @@ It is optimized for the Royal Challengers Bengaluru ticketing flow, but much of 
 - event polling via backend APIs
 - target match discovery
 - navigation to the live event page
-- stand selection and ticket-count selection
-- seat selection on Konva/canvas layouts
+- stand selection (click stand → seat modal opens automatically)
+- seat selection on Konva/canvas layouts (programmatic zoom to 0.3, modal-aware coordinate calculation)
 - add-to-cart response handling and retry logic
 - checkout form filling
 - payment method selection and payment initiation
@@ -231,18 +231,19 @@ The current implementation in `src/index.js` follows this high-level flow:
 3. start network capture
 4. poll the ticketing API for the target event
 5. navigate to the event page once the event is live
-6. apply browser zoom and activate the Konva interceptor
+6. activate the Konva interceptor (no CSS zoom — browser stays at 100%)
 7. iterate stands in configured priority order
-8. select ticket count and continue to seat map
-9. resolve available consecutive seats from intercepted seat data
-10. click seats on canvas and intercept `ticketaddtocart` response
-11. react based on response:
-    - success -> continue to checkout
-    - seat unavailable -> retry new seats in same stand
-    - stand limit exceeded -> move to next stand
-    - hard limit exceeded -> stop that account flow
-12. complete checkout form and initiate payment
-13. keep successful browser sessions open for manual payment completion
+8. click stand → wait for seat data interception → wait for seat modal to open
+9. set Konva stage scale to 0.3 programmatically (fits all seats in modal)
+10. resolve available consecutive seats from intercepted seat data
+11. click seats on the modal canvas and click Proceed
+12. intercept `ticketaddtocart` response and react:
+    - success → wait for modal to close, continue to checkout
+    - seat unavailable → retry new seats in same stand (modal stays open)
+    - stand limit exceeded → close modal, move to next stand
+    - hard limit exceeded → stop that account flow
+13. complete checkout form and initiate payment
+14. keep successful browser sessions open for manual payment completion
 
 For the deeper version of this flow, see `screen_flow.md`.
 
@@ -295,7 +296,7 @@ These are useful for targeted experimentation and debugging.
 - **Payment wait window**: controlled by `PAYMENT_WAIT_MINUTES`
 - **Stand priority**: controlled by `STAND_PRIORITY` or per-account `standPriority`
 - **Seat count**: controlled by `REQUIRED_CONSECUTIVE_SEATS`
-- **Browser zoom**: `BROWSER_ZOOM=0.5` is useful so the full stand view fits on screen
+- **Konva zoom**: Seat selection uses programmatic Konva stage scale (0.3) instead of CSS zoom — no `BROWSER_ZOOM` needed
 
 ### Long-running event polling strategy
 

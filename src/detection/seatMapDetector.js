@@ -270,10 +270,19 @@ class SeatMapDetector {
         logger.info('Konva interceptor has seat data — resolving canvas seat coordinates');
         const data = interceptor.getData();
         const resolver = new KonvaSeatMapResolver({ pool: config.seats.pool || 'O' });
+
+        // Pass the current CSS zoom level so coordinate conversion accounts for it.
+        // The resolver will also auto-detect CSS zoom from the page, but we pass it
+        // as a fallback. The resolver will use the Konva slider zoom (not CSS zoom)
+        // to fit all seats in view.
+        const cssZoom = this.browser.getZoomLevel ? this.browser.getZoomLevel() : 1.0;
+        logger.info(`Resolving seats with CSS zoom=${cssZoom}, pool=${config.seats.pool || 'O'}`);
+
         const browserSeats = await resolver.resolveWithBrowserCoords(
           data.seatTemplate,
           data.seatList,
-          this.browser.page
+          this.browser.page,
+          cssZoom
         );
 
         if (browserSeats.length > 0) {
@@ -320,13 +329,15 @@ class SeatMapDetector {
 
     const data = interceptor.getData();
     const resolver = new KonvaSeatMapResolver({ pool: config.seats.pool || 'O' });
+    const cssZoom = this.browser.getZoomLevel ? this.browser.getZoomLevel() : 1.0;
     const browserSeats = await resolver.resolveWithBrowserCoords(
       data.seatTemplate,
       data.seatList,
-      this.browser.page
+      this.browser.page,
+      cssZoom
     );
 
-    logger.info(`Refreshed ${browserSeats.length} canvas seat coordinates`);
+    logger.info(`Refreshed ${browserSeats.length} canvas seat coordinates (cssZoom=${cssZoom})`);
     return {
       seats: browserSeats,
       resolver: resolver,
@@ -358,9 +369,14 @@ class SeatMapDetector {
 
   async selectCanvasSeat(seatInfo) {
     try {
-      const { x, y } = seatInfo;
+      const { x, y, row, number, konvaX, konvaY } = seatInfo;
+      const label = row && number ? `${row}${number}` : 'unknown';
+      logger.info(`Clicking canvas seat ${label}: browser(${x.toFixed(1)},${y.toFixed(1)})` +
+        (konvaX !== undefined ? ` konva(${konvaX},${konvaY})` : ''));
       await this.browser.page.mouse.click(x, y);
-      logger.info(`Canvas seat clicked at: (${x}, ${y})`);
+      logger.info(`Canvas seat ${label} clicked successfully`);
+      // Brief pause to let the UI register the click
+      await this.browser.page.waitForTimeout(200);
       return true;
     } catch (error) {
       logger.error(`Error clicking canvas seat: ${error.message}`);

@@ -58,7 +58,7 @@ class TicketAutomationSystem {
         logger.info(`${this.tag} 🎟 Starting RCB Ticket Automation — API-First Hybrid v2.1 (session ${this.sessionId})`);
         logger.info(`${this.tag} Global timeout: ${config.timeouts.globalMinutes} min | OTP timeout: ${config.timeouts.otpWaitMinutes} min | Payment timeout: ${config.timeouts.paymentWaitMinutes} min`);
         logger.info(`${this.tag} Target: ${config.match.displayName} | Stands: ${this.getStandPriority().join(' → ')}`);
-        logger.info(`${this.tag} Browser zoom: ${config.browser.zoomLevel * 100}% | Seats needed: ${config.seats.requiredConsecutiveSeats}`);
+        logger.info(`${this.tag} Seats needed: ${config.seats.requiredConsecutiveSeats} | Zoom: slider-only (no CSS zoom)`);
 
         try {
             // Phase 1: Initialize browser + login
@@ -171,7 +171,7 @@ class TicketAutomationSystem {
                 continue;
             }
 
-            const btn = await this.browser.waitForAnyVisible(continuePopupSelectors, 2000, 200);
+            const btn = await this.browser.waitForAnyVisible(continuePopupSelectors, 10000, 200);
             if (btn) {
                 logger.info(`${this.tag} Continue popup detected after ${attempt} attempt(s)`);
                 break;
@@ -231,10 +231,113 @@ class TicketAutomationSystem {
                     continue;
                 }
 
-                // Clear any previous stand's captured data before starting a new stand attempt.
-                // Some pages fire the seat-list/template request as soon as the stand is clicked,
-                // before the seat map modal is fully visible.
+                // Check if a seat modal is still open from a previous stand attempt.
+                // Do NOT reset interceptor yet — we need the previous data to check
+                // if the leftover modal has usable seats.
+                // Instead of blindly closing it, check if it has usable seats — the website
+                // may have opened it late (after our quick-check skipped the modal wait).
+                if (await this._isSeatModalOpen()) {
+                    // The open modal might belong to the previous stand click that had seats.
+                    // If the interceptor still has data (not yet reset), try to use this modal.
+                    if (interceptor.hasData()) {
+                        const leftoverData = interceptor.getData();
+                        const leftoverList = leftoverData?.seatList?.result || [];
+                        const leftoverAvail = leftoverList.filter(s => s.status === 'O' && s.bucket === config.seats.pool);
+                        if (leftoverAvail.length > 0) {
+                            logger.info(`${this.tag} Leftover modal has ${leftoverAvail.length} available seats for pool "${config.seats.pool}" — using it instead of closing`);
+                            // Jump directly to seat selection using this modal and its data
+                            // (skip stand click, skip data wait — we already have everything)
+                            await this.browser.page.waitForTimeout(400); // React settle
+                            const seatRetryDeadline = Date.now() + (config.timeouts.seatRetryMinutes * 60 * 1000);
+                            let seatAttemptInStand = 0;
+                            let usedLeftoverModal = false;
+
+                            while (Date.now() < seatRetryDeadline && this.hasTimeLeft()) {
+                                seatAttemptInStand++;
+                                usedLeftoverModal = true;
+                                const data = interceptor.getData();
+                                const resolver = new KonvaSeatMapResolver({pool: config.seats.pool});
+                                const browserZoom = this.browser.getZoomLevel();
+                                const browserSeats = await resolver.resolveWithBrowserCoords(
+                                    data.seatTemplate, data.seatList, this.browser.page, browserZoom,
+                                    seatAttemptInStand === 1
+                                );
+                                if (browserSeats.length === 0) break;
+                                const consecutiveSeats = resolver.findConsecutiveSeats(seatCount);
+                                if (!consecutiveSeats) break;
+                                const canvasState = await resolver.getCanvasState(this.browser.page);
+                                if (!canvasState) break;
+                                const seatsToClick = consecutiveSeats.map(seat => {
+                                    const {browserX, browserY} = resolver.toBrowserCoords(
+                                        seat, canvasState.canvasRect, canvasState.scale, canvasState.stageOffset, browserZoom
+                                    );
+                                    return {...seat, browserX, browserY};
+                                });
+                                logger.info(`${this.tag} [Leftover modal] Clicking ${seatCount} seats: ${seatsToClick.map(s =>
+                                    `${s.row}${s.seat_No}@(${Math.round(s.browserX)},${Math.round(s.browserY)})`).join(', ')}`);
+                                for (const seat of seatsToClick) {
+                                    await this.browser.showClickMarker(seat.browserX, seat.browserY, `${seat.row}${seat.seat_No}`);
+                                    await this.browser.page.waitForTimeout(150);
+                                    await this.browser.page.mouse.click(seat.browserX, seat.browserY);
+                                    logger.info(`${this.tag} Clicked seat ${seat.row}${seat.seat_No}`);
+                                    await this.browser.page.waitForTimeout(150);
+                                }
+                                const proceedClicked = await this._clickProceedButton();
+                                if (!proceedClicked) break;
+                                const cartResult = await this._interceptAddToCartResponse();
+                                if (!cartResult) break;
+                                const action = this._classifyCartResponse(cartResult);
+                                if (action === 'success') {
+                                    const seatLabels = seatsToClick.map(s => `${s.row}${s.seat_No}`);
+                                    logger.info(`${this.tag} 🎫 Tickets added to cart! Seats: ${seatLabels.join(', ')}`);
+                                    await this._waitForModalClose(5000);
+                                    await this.browser.takeScreenshot(`tickets_in_cart_${this.account.id}.png`);
+                                    await this.telegram.sendTicketsAdded(standName, seatLabels, this.account.id);
+                                    try {
+                                        const checkoutResult = await this.checkoutFlow.runFromCurrentPage();
+                                        if (checkoutResult === 'success' || checkoutResult === 'timeout') {
+                                            await this.telegram.sendCheckoutReached(this.account.id);
+                                            return true;
+                                        }
+                                        return false;
+                                    } catch (error) {
+                                        logger.error(`${this.tag} Checkout flow error: ${error.message}`);
+                                        return true;
+                                    }
+                                }
+                                if (action === 'retry_new_seats') {
+                                    await new Promise(resolve => setTimeout(resolve, 1000));
+                                    await this.browser.page.waitForTimeout(400);
+                                    continue;
+                                }
+                                break; // Any other error — break out and proceed normally
+                            }
+                            // If we used the leftover modal, close it and continue to the current stand
+                            if (usedLeftoverModal) {
+                                if (await this._isSeatModalOpen()) {
+                                    await this._closeSeatModal();
+                                    await this._waitForModalClose(3000);
+                                }
+                                interceptor.reset();
+                                continue; // Skip to next stand iteration (don't re-click this stand)
+                            }
+                        }
+                    }
+                    // No usable seats in leftover modal — close it normally
+                    logger.info(`${this.tag} Seat modal still open from previous attempt — closing it`);
+                    await this._closeSeatModal();
+                    await this._waitForModalClose(3000);
+                }
+
+                // Now reset interceptor data for the new stand attempt.
+                // This must happen AFTER the leftover modal check (which needs the old data)
+                // but BEFORE the stand click (so fresh data is captured cleanly).
                 interceptor.reset();
+
+                // Set the timestamp BEFORE the click so that any API responses triggered
+                // by the click (or pre-fetched by React Query during page load) are accepted.
+                // The interceptor.reset() above already cleared stale data from previous stands,
+                // so any data captured from this point forward belongs to this stand attempt.
                 const standAttemptStartedAt = Date.now();
 
                 // Click the stand in the UI
@@ -244,22 +347,8 @@ class TicketAutomationSystem {
                     continue;
                 }
 
-                // Select ticket count
-                await this._selectTicketCount(seatCount);
-
-                // Click Continue to open seat map
-                await this._clickContinueButton();
-
-                const seatMapVisible = await this._waitForSeatMapCanvas();
-                if (!seatMapVisible) {
-                    logger.warn(`${this.tag} Seat map canvas not visible for stand "${standName}"; skipping coordinate selection`);
-                    if (this.browser.konvaInterceptor) {
-                        this.browser.konvaInterceptor.reset();
-                    }
-                    continue;
-                }
-
                 // Wait for seat data from interceptor (seat-template + seatlist)
+                // The API fires as soon as the stand is clicked.
                 const dataReady = await interceptor.waitForSeatData(
                     config.timeouts.seatDataInterceptMs,
                     standAttemptStartedAt
@@ -269,81 +358,148 @@ class TicketAutomationSystem {
                     continue;
                 }
 
+                // Quick-check: if the intercepted seatlist has 0 available seats for our pool,
+                // the website won't open the seat modal at all (just shows a toast).
+                // Skip the 8-second modal wait in this case.
+                {
+                    const quickData = interceptor.getData();
+                    const quickList = quickData?.seatList?.result || [];
+                    const quickOpen = quickList.filter(s => s.status === 'O');
+                    const quickAvail = quickOpen.filter(s => s.bucket === config.seats.pool);
+
+                    // Debug: log seat availability breakdown
+                    if (quickOpen.length > 0 && quickAvail.length === 0) {
+                        const bucketCounts = {};
+                        quickOpen.forEach(s => { bucketCounts[s.bucket] = (bucketCounts[s.bucket] || 0) + 1; });
+                        logger.debug(`${this.tag} [DEBUG] Seats with status=O but wrong pool: ${JSON.stringify(bucketCounts)} (our pool="${config.seats.pool}")`);
+                    }
+                    logger.debug(`${this.tag} [DEBUG] Quick-check for "${standName}": total=${quickList.length}, open=${quickOpen.length}, pool-match=${quickAvail.length}, pool="${config.seats.pool}"`);
+
+                    if (quickAvail.length === 0) {
+                        // Don't skip entirely — the website may use fresher data or different
+                        // filtering. Use a short modal wait (2s) instead of the full 8s.
+                        // If the modal opens, we'll use it; if not, we move on quickly.
+                        logger.warn(`${this.tag} No available seats in intercepted data for "${standName}" — using short modal wait (${quickOpen.length} open seats in other pools)`);
+                        const quickModalOpen = await this._waitForSeatModal(2000);
+                        if (!quickModalOpen) {
+                            continue; // Modal didn't open — truly no seats, move to next stand
+                        }
+                        // Modal opened despite quick-check saying 0 seats — website has fresher data
+                        logger.info(`${this.tag} Modal opened for "${standName}" despite quick-check (website has fresher seat data)`);
+                    } else {
+                        logger.info(`${this.tag} Found ${quickAvail.length} available seats for pool "${config.seats.pool}" in "${standName}"`);
+                    }
+                }
+
+                // For seat-selection stands, the modal opens automatically after clicking.
+                // Wait for the seat modal to appear with a canvas inside it (if not already open from quick-check path).
+                const seatModalOpen = await this._isSeatModalOpen() || await this._waitForSeatModal();
+                if (!seatModalOpen) {
+                    logger.warn(`${this.tag} Seat modal did not open for stand "${standName}"; skipping`);
+                    if (this.browser.konvaInterceptor) {
+                        this.browser.konvaInterceptor.reset();
+                    }
+                    continue;
+                }
+                logger.info(`${this.tag} Seat selection modal opened for stand "${standName}"`);
+
+                // Wait for the website's React to process the seatlist response and
+                // render the Konva canvas nodes before we read/modify the stage.
+                // The modal is freshly created each time (scale resets to 0.65) and
+                // React Query's useEffect needs time to merge seatlist into template.
+                // 400ms is sufficient — React useEffect fires within 1-2 frames (~32ms),
+                // plus margin for data processing and Konva node updates.
+                await this.browser.page.waitForTimeout(400);
+
                 // Phase 5: Seat selection retry loop (within same stand)
                 const seatRetryDeadline = Date.now() + (config.timeouts.seatRetryMinutes * 60 * 1000);
+                let seatAttemptInStand = 0;
 
                 while (Date.now() < seatRetryDeadline && this.hasTimeLeft()) {
+                    seatAttemptInStand++;
                     const data = interceptor.getData();
                     const resolver = new KonvaSeatMapResolver({pool: config.seats.pool});
                     const browserZoom = this.browser.getZoomLevel();
 
+                    // Set Konva scale on first attempt (zoom out to fit all seats)
+                    if (seatAttemptInStand === 1) {
+                        await resolver.setKonvaStageScale(this.browser.page, 0.3);
+                        await this.browser.page.waitForTimeout(400);
+                    }
+
+                    // --- API-based seat resolution (kept for comparison logging, no scale change) ---
                     const browserSeats = await resolver.resolveWithBrowserCoords(
-                        data.seatTemplate, data.seatList, this.browser.page, browserZoom
+                        data.seatTemplate, data.seatList, this.browser.page, browserZoom,
+                        false  // Scale already set above — don't set again
                     );
 
-                    if (browserSeats.length === 0) {
-                        logger.warn(`${this.tag} No available seats in stand "${standName}"`);
+                    // --- Canvas-based seat reading (used for actual clicking) ---
+                    const canvasResult = await resolver.readSeatsFromCanvas(this.browser.page, browserZoom);
+                    const canvasAvail = (canvasResult.canvasSeats || []).filter(s => !s.selected);
+
+                    // Log comparison between API intercept and canvas read
+                    logger.info(`${this.tag} [COMPARE] API intercept: ${browserSeats.length} seats | Canvas read: ${canvasAvail.length} seats | Delta: ${canvasAvail.length - browserSeats.length}`);
+                    if (browserSeats.length !== canvasAvail.length) {
+                        logger.warn(`${this.tag} [COMPARE] ⚠️ MISMATCH! API says ${browserSeats.length}, canvas shows ${canvasAvail.length} available seats`);
+                    }
+
+                    if (canvasAvail.length === 0) {
+                        logger.warn(`${this.tag} No available seats on canvas for stand "${standName}" (API says ${browserSeats.length})`);
                         break; // Try next stand
                     }
 
-                    // Find consecutive seats
-                    const consecutiveSeats = resolver.findConsecutiveSeats(seatCount);
-                    if (!consecutiveSeats) {
-                        logger.warn(`${this.tag} No ${seatCount} consecutive seats in stand "${standName}"`);
+                    // Find consecutive seats from canvas data (uses konvaX spacing, not seat numbers)
+                    const consecutiveCanvasSeats = resolver.findConsecutiveCanvasSeats(canvasResult.canvasSeats, seatCount);
+                    if (!consecutiveCanvasSeats) {
+                        logger.warn(`${this.tag} No ${seatCount} consecutive seats on canvas for stand "${standName}"`);
                         break; // Try next stand
                     }
 
-                    // Convert to browser coords for clicking
-                    const canvasState = await resolver.getCanvasState(this.browser.page);
-                    if (!canvasState) {
-                        logger.error(`${this.tag} Canvas not found on page`);
-                        break;
-                    }
+                    logger.info(`${this.tag} Clicking ${seatCount} seats (canvas coords): ${consecutiveCanvasSeats.map(s =>
+                        `konva(${s.konvaX},${s.konvaY})@browser(${Math.round(s.browserX)},${Math.round(s.browserY)})`).join(', ')}`);
 
-                    const seatsToClick = consecutiveSeats.map(seat => {
-                        const {browserX, browserY} = resolver.toBrowserCoords(
-                            seat, canvasState.canvasRect, canvasState.scale, canvasState.stageOffset, browserZoom
-                        );
-                        return {...seat, browserX, browserY};
-                    });
-
-                    logger.info(`${this.tag} Clicking ${seatCount} seats: ${seatsToClick.map(s =>
-                        `${s.row}${s.seat_No}@(${Math.round(s.browserX)},${Math.round(s.browserY)})`).join(', ')}`);
-
-                    // Click each seat on the canvas
-                    for (const seat of seatsToClick) {
+                    // Click each seat using canvas-read browser coordinates
+                    for (const seat of consecutiveCanvasSeats) {
                         await this.browser.showClickMarker(
                             seat.browserX,
                             seat.browserY,
-                            `${seat.row}${seat.seat_No}`
+                            `(${seat.konvaX},${seat.konvaY})`
                         );
                         await this.browser.page.waitForTimeout(150);
                         await this.browser.page.mouse.click(seat.browserX, seat.browserY);
-                        logger.info(`${this.tag} Clicked seat ${seat.row}${seat.seat_No}`);
+                        logger.info(`${this.tag} Clicked seat at konva(${seat.konvaX},${seat.konvaY}) → browser(${seat.browserX.toFixed(1)},${seat.browserY.toFixed(1)})`);
                         await this.browser.page.waitForTimeout(150);
                     }
 
-                    // Click "Proceed" button
+                    // Click "Proceed" button inside the seat modal
                     const proceedClicked = await this._clickProceedButton();
                     if (!proceedClicked) {
-                        logger.warn(`${this.tag} Proceed button not found after seat selection`);
-                        continue;
+                        logger.warn(`${this.tag} Proceed button not found after seat selection — closing modal`);
+                        await this._closeSeatModal();
+                        await this._waitForModalClose(3000);
+                        break; // Exit seat retry, try next stand
                     }
 
                     // Intercept ticketaddtocart response
                     const cartResult = await this._interceptAddToCartResponse();
 
                     if (!cartResult) {
-                        logger.warn(`${this.tag} No add-to-cart response intercepted`);
-                        continue;
+                        logger.warn(`${this.tag} No add-to-cart response intercepted — closing modal`);
+                        await this._closeSeatModal();
+                        await this._waitForModalClose(3000);
+                        break; // Exit seat retry, try next stand
                     }
 
                     // Handle response
                     const action = this._classifyCartResponse(cartResult);
 
                     if (action === 'success') {
-                        const seatLabels = seatsToClick.map(s => `${s.row}${s.seat_No}`);
+                        const seatLabels = consecutiveCanvasSeats.map(s => `konva(${s.konvaX},${s.konvaY})`);
                         logger.info(`${this.tag} 🎫 Tickets added to cart! Stand: ${standName}, Seats: ${seatLabels.join(', ')}`);
+
+                        // On success, the website closes the modal and navigates to checkout/addon.
+                        // Wait for the modal to close before proceeding.
+                        await this._waitForModalClose(5000);
                         await this.browser.takeScreenshot(`tickets_in_cart_${this.account.id}.png`);
                         await this.telegram.sendTicketsAdded(standName, seatLabels, this.account.id);
 
@@ -364,17 +520,45 @@ class TicketAutomationSystem {
                     }
 
                     if (action === 'retry_new_seats') {
-                        logger.info(`${this.tag} Seats taken by another user — retrying with new seats in same stand`);
-                        // Wait for seatlist to refresh (the app auto-refetches)
+                        const retryStartedAt = Date.now();
+                        logger.info(`${this.tag} Seats taken by another user — waiting for fresh seatlist before retrying`);
+                        // The modal stays open, the website automatically refetches the seatlist.
+                        // Do NOT reset the interceptor — the seat-template hasn't changed.
+                        // Wait for a fresh seatlist response captured AFTER this retry started.
+                        // Website's j.refetch() fires immediately; network round-trip is ~200-500ms.
                         await new Promise(resolve => setTimeout(resolve, 1000));
-                        // Reset interceptor to capture fresh seat data only after this retry point
-                        interceptor.reset();
-                        await interceptor.waitForSeatData(config.timeouts.seatDataInterceptMs, Date.now());
-                        continue; // Retry within same stand
+
+                        // Verify we have data captured after the retry started (not stale from before)
+                        if (interceptor.lastSeatDataAt < retryStartedAt) {
+                            logger.debug(`${this.tag} [DEBUG] Seatlist data is stale (captured ${retryStartedAt - interceptor.lastSeatDataAt}ms before retry). Waiting for fresh data...`);
+                            // Wait up to 3 more seconds for fresh seatlist
+                            const freshDeadline = Date.now() + 3000;
+                            while (Date.now() < freshDeadline && interceptor.lastSeatDataAt < retryStartedAt) {
+                                await new Promise(resolve => setTimeout(resolve, 300));
+                            }
+                            if (interceptor.lastSeatDataAt >= retryStartedAt) {
+                                logger.info(`${this.tag} Fresh seatlist captured for retry`);
+                            } else {
+                                logger.warn(`${this.tag} No fresh seatlist arrived — using existing data`);
+                            }
+                        } else {
+                            logger.info(`${this.tag} Fresh seatlist already available for retry (captured ${interceptor.lastSeatDataAt - retryStartedAt}ms after retry start)`);
+                        }
+
+                        // Wait for the website's React to process the fresh seatlist and
+                        // re-render the Konva canvas nodes. The interceptor has the new data,
+                        // but the canvas may still be showing the old seat states until React's
+                        // useEffect fires and updates the Konva nodes.
+                        await this.browser.page.waitForTimeout(400);
+
+                        continue; // Retry within same stand (modal stays open)
                     }
 
                     if (action === 'retry_next_stand') {
-                        logger.warn(`${this.tag} Stand limit exceeded for "${standName}" — trying next stand`);
+                        logger.warn(`${this.tag} Stand limit exceeded for "${standName}" — closing modal, trying next stand`);
+                        // The website may close the modal on stand-level errors, but ensure it's closed
+                        await this._closeSeatModal();
+                        await this._waitForModalClose(3000);
                         break; // Break inner loop, continue outer stand loop
                     }
 
@@ -385,9 +569,18 @@ class TicketAutomationSystem {
                         return false;
                     }
 
-                    // Unknown error — retry
-                    logger.warn(`${this.tag} Unknown cart response: ${JSON.stringify(cartResult)}. Retrying...`);
-                    continue;
+                    // Unknown error — close modal and retry with next stand
+                    logger.warn(`${this.tag} Unknown cart response: ${JSON.stringify(cartResult)} — closing modal`);
+                    await this._closeSeatModal();
+                    await this._waitForModalClose(3000);
+                    break; // Try next stand instead of retrying same seats
+                }
+
+                // Ensure modal is closed before moving to next stand
+                if (await this._isSeatModalOpen()) {
+                    logger.info(`${this.tag} Closing seat modal before next stand`);
+                    await this._closeSeatModal();
+                    await this._waitForModalClose(3000);
                 }
 
                 // Reset interceptor data for next stand
@@ -446,6 +639,20 @@ class TicketAutomationSystem {
                 "xpath=//p[text()='CATEGORY']/following-sibling::div[1]/div/div/p[1]"
             ).all();
 
+            // Debug: log all visible stands on the page
+            const allStandNames = [];
+            for (const loc of standLocators) {
+                try {
+                    const t = ((await loc.textContent()) || '').trim();
+                    if (t) allStandNames.push(t);
+                } catch (_) {}
+            }
+            if (allStandNames.length === 0) {
+                logger.debug(`${this.tag} [DEBUG] No stands found with CATEGORY XPath. Page may not be ready or UI structure changed.`);
+            } else {
+                logger.debug(`${this.tag} [DEBUG] Stands on page (${allStandNames.length}): ${allStandNames.map(n => `"${n}"`).join(', ')}`);
+            }
+
             for (let i = standLocators.length - 1; i >= 0; i--) {
                 const text = ((await standLocators[i].textContent()) || '').trim();
                 if (text.toLowerCase().includes(standName.toLowerCase())) {
@@ -454,6 +661,8 @@ class TicketAutomationSystem {
                     return true;
                 }
             }
+
+            logger.debug(`${this.tag} [DEBUG] Stand "${standName}" not found in visible stands. Check STAND_PRIORITY matches exact stand names.`);
         } catch (error) {
             logger.warn(`${this.tag} Stand click failed: ${error.message}`);
         }
@@ -482,8 +691,7 @@ class TicketAutomationSystem {
 
     async _clickContinueButton() {
         try {
-            // Apply zoom only right before opening the seat map modal.
-            await this.browser.applyZoom();
+            // No CSS zoom — seat selection uses Konva slider zoom instead
             const btn = await this.browser.waitForAnyVisible([
                 "button:has-text('Continue')",
                 "button:has-text('Proceed')",
@@ -498,20 +706,30 @@ class TicketAutomationSystem {
         return false;
     }
 
-    async _waitForSeatMapCanvas(timeoutMs = 8000) {
+    /**
+     * Wait for the seat selection modal to open with a canvas inside it.
+     * This specifically waits for a modal dialog containing a Konva canvas,
+     * NOT just any canvas on the page (the stand map also has a canvas).
+     */
+    async _waitForSeatModal(timeoutMs = 8000) {
         const deadline = Date.now() + timeoutMs;
         while (Date.now() < deadline) {
             try {
-                const canvas = this.browser.page.locator('.konvajs-content canvas, canvas').first();
-                if (await canvas.isVisible()) {
-                    const box = await canvas.boundingBox();
+                // Check for a modal/dialog that contains a canvas
+                const modalCanvas = this.browser.page.locator(
+                    '.chakra-modal__body .konvajs-content canvas, ' +
+                    '.chakra-modal__content .konvajs-content canvas, ' +
+                    '[role="dialog"] .konvajs-content canvas, ' +
+                    '.chakra-modal__body canvas'
+                ).first();
+                if (await modalCanvas.isVisible()) {
+                    const box = await modalCanvas.boundingBox();
                     if (box && box.width > 50 && box.height > 50) {
                         return true;
                     }
                 }
-            } catch (_) {
-            }
-            await this.browser.page.waitForTimeout(250);
+            } catch (_) {}
+            await this.browser.page.waitForTimeout(300);
         }
         return false;
     }
@@ -532,6 +750,74 @@ class TicketAutomationSystem {
         } catch (_) {
         }
         return false;
+    }
+
+    /**
+     * Close the seat selection modal if it's still open.
+     * Tries the close button (X), then Escape key as fallback.
+     */
+    async _closeSeatModal() {
+        try {
+            // Try clicking the modal close button (Chakra UI close button)
+            const closeBtn = await this.browser.waitForAnyVisible([
+                '.chakra-modal__close-btn',
+                '[aria-label="Close"]',
+                'button.chakra-modal__close-btn'
+            ], 1500, 200);
+            if (closeBtn) {
+                await closeBtn.click();
+                logger.info(`${this.tag} Closed seat selection modal via close button`);
+                await this.browser.page.waitForTimeout(500);
+                return true;
+            }
+        } catch (_) {}
+
+        // Fallback: press Escape
+        try {
+            await this.browser.page.keyboard.press('Escape');
+            logger.info(`${this.tag} Pressed Escape to close modal`);
+            await this.browser.page.waitForTimeout(500);
+            return true;
+        } catch (_) {}
+
+        return false;
+    }
+
+    /**
+     * Wait for the seat selection modal to close (disappear from DOM).
+     * Returns true if modal closed, false if still open after timeout.
+     */
+    async _waitForModalClose(timeoutMs = 5000) {
+        const deadline = Date.now() + timeoutMs;
+        while (Date.now() < deadline) {
+            try {
+                const modalVisible = await this.browser.page.locator(
+                    '.chakra-modal__content, [role="dialog"]'
+                ).first().isVisible();
+                if (!modalVisible) {
+                    logger.info(`${this.tag} Seat modal closed`);
+                    return true;
+                }
+            } catch (_) {
+                // Element not found = modal closed
+                return true;
+            }
+            await this.browser.page.waitForTimeout(300);
+        }
+        logger.warn(`${this.tag} Seat modal still open after ${timeoutMs}ms`);
+        return false;
+    }
+
+    /**
+     * Check if the seat selection modal is currently visible.
+     */
+    async _isSeatModalOpen() {
+        try {
+            const modal = this.browser.page.locator('.chakra-modal__content, [role="dialog"]').first();
+            return await modal.isVisible();
+        } catch (_) {
+            return false;
+        }
     }
 
     /**
