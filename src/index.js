@@ -99,22 +99,6 @@ class TicketAutomationSystem {
         return await this.initializeAndLogin();
     }
 
-    async checkLogin() {
-        logger.info(`${this.tag} Checking login state for shared-event flow...`);
-        // Login (session reuse or OTP)
-        this.login = new LoginManager(this.browser, this.account, this.telegram);
-        const loggedIn = await this.login.detectAndHandleLogin();
-        if (!loggedIn) {
-            logger.error(`${this.tag} Login failed or timed out`);
-            await this.browser.takeScreenshot(`login_failed_${this.account.id}.png`);
-            await this.telegram.sendLoginFailed(this.account.id);
-            return false;
-        }
-        return true;
-    }
-
-
-
     // ── Phase 1: Initialize + Login ─────────────────────────────────────
 
     async initializeAndLogin() {
@@ -984,9 +968,25 @@ async function main() {
     try {
         // Phase A: preload/login all accounts first
         logger.info('Phase A: Preloading all accounts and restoring login state before event polling...');
-        const preloadResults = await Promise.allSettled(
-            systems.map(system => system.preload())
-        );
+        logger.info('🔄 Staggering browser launches by 2 seconds per account to avoid bot detection...');
+
+        // Stagger browser launches: start each 2s apart but run concurrently.
+        // This avoids the simultaneous connection spike that triggers rate limits,
+        // while still being much faster than fully sequential preloading.
+        const preloadPromises = systems.map((system, i) => {
+            return new Promise(resolve => {
+                setTimeout(async () => {
+                    logger.info(`🚀 Launching browser ${i + 1}/${systems.length} (${system.account.id})...`);
+                    try {
+                        const result = await system.preload();
+                        resolve({ status: 'fulfilled', value: result });
+                    } catch (error) {
+                        resolve({ status: 'rejected', reason: error });
+                    }
+                }, i * 2000); // 2s stagger between each launch
+            });
+        });
+        const preloadResults = await Promise.all(preloadPromises);
 
         const readySystems = [];
         const preloadFailures = [];
@@ -1027,9 +1027,6 @@ async function main() {
         await telegram.sendMessage(`📣 *Shared Event Discovered*\n\nScout: ${scoutSystem.account.id}\nEvent: ${sharedEvent.event_Name}\nCode: ${sharedEvent.event_Code}\nReady accounts: ${readySystems.map(s => s.account.id).join(', ')}`);
 
         // Phase C: all ready accounts jump directly into booking using the shared event
-        await Promise.allSettled(
-            readySystems.map(system => system.checkLogin())
-        );
         const bookingResults = await Promise.allSettled(
             readySystems.map(system => system.startWithKnownEvent(sharedEvent))
         );

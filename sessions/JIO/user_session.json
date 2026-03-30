@@ -1,0 +1,287 @@
+{
+  "cookies": [
+    {
+      "name": "CLID",
+      "value": "f2cf55f0f0e249b18aa0c6b51d2b90ba.20260329.20270329",
+      "domain": "www.clarity.ms",
+      "path": "/",
+      "expires": 1806341921.28204,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "rzp_unified_session_id",
+      "value": "SX7uk3N8KGr1ta",
+      "domain": "shop.royalchallengers.com",
+      "path": "/",
+      "expires": 1774807721,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_gcl_au",
+      "value": "1.1.1534340993.1774805922",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1782581922,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga",
+      "value": "GA1.1.350756528.1774805922",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1809366056.77595,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_clck",
+      "value": "12l5ehq%5E2%5Eg4r%5E0%5E2279",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1806341922,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "li_sugr",
+      "value": "4912f5ca-fd66-4536-8fc8-045f9db6d550",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1782582057.001686,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "bcookie",
+      "value": "\"v=2&4b867b33-2664-48d4-846b-aef1e37ed3ab\"",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1806342057.001844,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "lidc",
+      "value": "\"b=VGST04:s=V:r=V:a=V:p=V:g=3733:u=1:x=1:i=1774805921:t=1774892321:v=2:sig=AQFm9--ILvoZ9sIOgtcjI_1g6JH2Cg6H\"",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1774892322.718181,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "UserMatchHistory",
+      "value": "AQLIGUQPezW7VgAAAZ06rS_5AFU95czzmjT5vuCjgphz58pmUgSMzF6sMAjppnnDuhO6zOY5uhhoQA",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1777397923.049928,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "AnalyticsSyncHistory",
+      "value": "AQI0psGCao60SQAAAZ06rS_5WqPN8wVfWg-zxcRVHcSugy3uj1GfAkZ2sYCO4JW5aNJrx1SAjcXBczuNoPgljw",
+      "domain": ".linkedin.com",
+      "path": "/",
+      "expires": 1777397923.049974,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "IDE",
+      "value": "AHWqTUm29Lobc5KONOf5NXgJI65lf7gvwGmXTwGVaeHktOjuQVEL9JbLOyYIu8CJ",
+      "domain": ".doubleclick.net",
+      "path": "/",
+      "expires": 1809365923.102037,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "bscookie",
+      "value": "\"v=1&20260329173842831e5a7a-3079-4a66-84eb-9b3a3269c65eAQE2NphDPekdF-mWqSgsPr6x0PMSxAzX\"",
+      "domain": ".www.linkedin.com",
+      "path": "/",
+      "expires": 1806341924.31155,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "MUID",
+      "value": "0B7C9599F44A6051243482B2F535618F",
+      "domain": ".bing.com",
+      "path": "/",
+      "expires": 1808501923.930382,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "MR",
+      "value": "0",
+      "domain": ".c.bing.com",
+      "path": "/",
+      "expires": 1775410723.930494,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "SRM_B",
+      "value": "0B7C9599F44A6051243482B2F535618F",
+      "domain": ".c.bing.com",
+      "path": "/",
+      "expires": 1808501923.930543,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "SM",
+      "value": "C",
+      "domain": ".c.clarity.ms",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "MUID",
+      "value": "0B7C9599F44A6051243482B2F535618F",
+      "domain": ".clarity.ms",
+      "path": "/",
+      "expires": 1808501924.070184,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "MR",
+      "value": "0",
+      "domain": ".c.clarity.ms",
+      "path": "/",
+      "expires": 1775410724.07027,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "ANONCHK",
+      "value": "0",
+      "domain": ".c.clarity.ms",
+      "path": "/",
+      "expires": 1774806524.070309,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "rtokn",
+      "value": "UmCQZK31GvZq2/qwPnyr52+YIrrHiGWB5xDcLVh4jzDJzH+z1xbmZSx6bm4AHk0m8HGyw80SgOV8jNbEbC+N7li2z48+B2Z4Q58q5LTd4H/7VYkjfVIN6tone0WkogzD66pwsUP0LBMZ7aJCBvVBB5R9t7gIo4Wobe/sj/ZvUxrUYmrCU2WbzuzBXtpb7u7y6Z7C2mYCYU6+Ia0G9E9HoMvAgKxSUWImM8JkhJ/I+RPm/2AwsQuniIQEKQGzheLYrzVDbWRibe2p9g0HIxRQrR+PxsTeBzLIQhcLaLGOTSvpSGD2ZEW+R98KbLMMfEH1GZSRx9g12vUJoqYlInfb4GsHV+sZY1P1dQwHfax+3a6hmwnvhYDccEtTCVKdaouX8/VpSgtlUZrc37a6bJuAOTclL3MfoBRFnWvClqV8g8V3tnoS3kBOBP6eTwWNpZZMQTLPAZRiAfAMOcOcdCt6vTBP8f/nh46Ulec2jieq3VI=",
+      "domain": "shop.royalchallengers.com",
+      "path": "/",
+      "expires": 1777397949,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Strict"
+    },
+    {
+      "name": "_ga_47DT5CSCWH",
+      "value": "GS2.1.s1774805922$o1$g1$t1774806060$j56$l0$h0",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1809366060.675662,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_clsk",
+      "value": "3z694e%5E1774806061135%5E4%5E1%5Ej.clarity.ms%2Fcollect",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1774892461,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_M00GBFXY2G",
+      "value": "GS2.1.s1774805922$o1$g1$t1774806061$j55$l0$h1054109999",
+      "domain": ".royalchallengers.com",
+      "path": "/",
+      "expires": 1809366061.576801,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "https://shop.royalchallengers.com",
+      "localStorage": [
+        {
+          "name": "rudtl",
+          "value": "{\"state\":{\"session\":{\"msg\":\"Y\",\"custId\":1921601,\"name\":\"Varsha\",\"mob\":\"8660871166\",\"pool\":\"O\",\"token\":\"UmCQZK31GvZq2/qwPnyr52+YIrrHiGWB5xDcLVh4jzDJzH+z1xbmZSx6bm4AHk0m8HGyw80SgOV8jNbEbC+N7li2z48+B2Z4Q58q5LTd4H/7VYkjfVIN6tone0WkogzD66pwsUP0LBMZ7aJCBvVBB5R9t7gIo4Wobe/sj/ZvUxrUYmrCU2WbzuzBXtpb7u7y6Z7C2mYCYU6+Ia0G9E9HoMvAgKxSUWImM8JkhJ/I+RPm/2AwsQuniIQEKQGzheLYrzVDbWRibe2p9g0HIxRQrR+PxsTeBzLIQhcLaLGOTSvpSGD2ZEW+R98KbLMMfEH1GZSRx9g12vUJoqYlInfb4GsHV+sZY1P1dQwHfax+3a6hmwnvhYDccEtTCVKdaouX8/VpSgtlUZrc37a6bJuAOTclL3MfoBRFnWvClqV8g8V3tnoS3kBOBP6eTwWNpZZMQTLPAZRiAfAMOcOcdCt6vTBP8f/nh46Ulec2jieq3VI=\",\"ml\":6,\"tl\":10},\"openLogin\":false,\"lastOrderId\":\"\"},\"version\":0}"
+        },
+        {
+          "name": "rzp_checkout_anon_id",
+          "value": "fc14ac8db83d4d21afbb7e7acc731811"
+        },
+        {
+          "name": "rzp_device_id",
+          "value": "1.7d1ff34a8ee30fde6911ee531f5b1c73c476f581.1774805921094.07627804"
+        },
+        {
+          "name": "mrt-store",
+          "value": "{\"state\":{\"cartCount\":0,\"ticCount\":0,\"totalAmount\":0,\"tickets\":[],\"merchandise\":[],\"products\":[],\"addons\":[],\"parking\":[]},\"version\":0}"
+        },
+        {
+          "name": "_gcl_ls",
+          "value": "{\"schema\":\"gcl\",\"version\":1,\"gcl_ctr\":{\"value\":{\"value\":0,\"timeouts\":0,\"errors\":0,\"creationTimeMs\":1774805922135},\"expires\":1782581922135}}"
+        },
+        {
+          "name": "chakra-ui-color-mode",
+          "value": "light"
+        },
+        {
+          "name": "li_adsId",
+          "value": "7e2fe5b5-d496-4499-8be4-0debe24db7e9"
+        }
+      ]
+    },
+    {
+      "origin": "https://api.razorpay.com",
+      "localStorage": [
+        {
+          "name": "rzp_device_id",
+          "value": "1.7d1ff34a8ee30fde6911ee531f5b1c73c476f581.1774805921094.07627804"
+        }
+      ]
+    },
+    {
+      "origin": "https://www.google.com",
+      "localStorage": [
+        {
+          "name": "rc::a",
+          "value": "bzQ0M2NnejM5dXYw"
+        }
+      ]
+    }
+  ]
+}

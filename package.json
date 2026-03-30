@@ -9,15 +9,22 @@
     "dev": "node src/index.js",
     "test": "node src/test/test.js"
   },
-  "keywords": ["automation", "playwright", "ticketing", "bot"],
+  "keywords": [
+    "automation",
+    "playwright",
+    "ticketing",
+    "bot"
+  ],
   "author": "Ticket Automation System",
   "license": "MIT",
   "dependencies": {
-    "playwright": "^1.40.0",
     "dotenv": "^16.3.1",
-    "winston": "^3.11.0",
     "moment": "^2.29.4",
-    "node-telegram-bot-api": "^0.67.0"
+    "node-telegram-bot-api": "^0.67.0",
+    "playwright": "^1.40.0",
+    "playwright-extra": "4.3.6",
+    "puppeteer-extra-plugin-stealth": "2.11.2",
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0"

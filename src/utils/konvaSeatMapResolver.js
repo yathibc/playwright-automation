@@ -1,4 +1,4 @@
- /**
+/**
  * KonvaSeatMapResolver
  *
  * Replicates the exact Konva canvas coordinate calculation from the RCB website's
@@ -810,12 +810,23 @@ class KonvaSeatMapResolver {
     const canvasRect = result.stageInfo?.canvasRect;
 
     if (canvasRect) {
+      const stageScale = result.stageInfo?.scale || 0.65;
+      const seatSizePx = 18 * stageScale; // seat size in pixel space after scaling
       result.canvasSeats = result.canvasSeats.map(seat => {
-        // absX/absY are already in canvas pixel space (includes stage scale + offset)
-        const browserX = (canvasRect.left + seat.absX + 9) / zoom; // +9 = center of 18px rect
-        const browserY = (canvasRect.top + seat.absY + 9) / zoom;
-        return { ...seat, browserX, browserY };
-      });
+        // absX/absY are already in canvas pixel space (includes stage scale + offset).
+        // The center of the 18px rect in Konva coords is at (konvaX + 9, konvaY + 9).
+        // After scaling, the center offset in pixel space is 9 * scale, not a flat 9.
+        const centerOffsetPx = 9 * stageScale;
+        const browserX = (canvasRect.left + seat.absX + centerOffsetPx) / zoom;
+        const browserY = (canvasRect.top + seat.absY + centerOffsetPx) / zoom;
+        // Check if the seat center is within the visible canvas area.
+        // Seats panned outside the canvas viewport can't be clicked.
+        const relX = seat.absX + centerOffsetPx;
+        const relY = seat.absY + centerOffsetPx;
+        const visible = relX >= 0 && relY >= 0 &&
+                        relX <= canvasRect.width && relY <= canvasRect.height;
+        return { ...seat, browserX, browserY, visible };
+      }).filter(seat => seat.visible);
     }
 
     const unselected = result.canvasSeats.filter(s => !s.selected);

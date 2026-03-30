@@ -102,433 +102,576 @@
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="meta" id="meta">Loading harness...</div>
-    <div class="toolbar" id="toolbar">
-      <span class="hint">Scenario:</span>
-      <button data-scenario="baseline">baseline</button>
-      <button data-scenario="selected">selected</button>
-      <button data-scenario="consecutive">consecutive</button>
-      <button data-scenario="gapped">gapped</button>
-      <button data-scenario="scaled">scaled</button>
-      <button data-scenario="panned">panned</button>
-      <button data-scenario="multistage">multistage</button>
-      <span class="hint">Pool:</span>
-      <select id="pool-select">
-        <option value="D">D</option>
-        <option value="O">O</option>
-        <option value="U">U</option>
-      </select>
-      <button id="reset-selected">reset selected clicks</button>
-      <span class="hint">Tip: click gold/white seats to toggle selected state and re-run canvas-read manually.</span>
-    </div>
-    <div id="background-stage" class="background-stage"></div>
-    <div class="dialog" role="dialog" aria-label="Seat selection dialog">
-      <div class="dialog-header">Seat Selection Harness</div>
-      <div class="dialog-body">
-        <div id="seat-stage" class="konva-seat-stage"></div>
-      </div>
-    </div>
-    <div class="summary" id="summary">Preparing scenario...</div>
+<div class="page">
+  <div class="meta" id="meta">Loading harness...</div>
+  <div class="toolbar" id="toolbar">
+    <span class="hint">Scenario:</span>
+    <button data-scenario="baseline">baseline</button>
+    <button data-scenario="selected">selected</button>
+    <button data-scenario="consecutive">consecutive</button>
+    <button data-scenario="gapped">gapped</button>
+    <button data-scenario="scaled">scaled</button>
+    <button data-scenario="panned">panned</button>
+    <button data-scenario="multistage">multistage</button>
+    <span class="hint">Pool:</span>
+    <select id="pool-select">
+      <option value="D">D</option>
+      <option value="O">O</option>
+      <option value="U">U</option>
+    </select>
+    <button id="reset-selected">reset selected clicks</button>
+    <span class="hint">Tip: click gold/white seats to toggle selected state and re-run canvas-read manually.</span>
   </div>
+  <div id="background-stage" class="background-stage"></div>
+  <div class="dialog" role="dialog" aria-label="Seat selection dialog">
+    <div class="dialog-header">Seat Selection Harness</div>
+    <div class="dialog-body">
+      <div id="seat-stage" class="konva-seat-stage"></div>
+    </div>
+  </div>
+  <div class="summary" id="summary">Preparing scenario...</div>
+</div>
 
-  <script type="module">
-    import { a as Konva } from '../../data/konva-BSqBjOm2.js';
+<script type="module">
+  import { a as Konva } from '../../data/konva-BSqBjOm2.js';
 
-    const params = new URLSearchParams(window.location.search);
-    let scenario = params.get('scenario') || 'baseline';
-    let pool = params.get('pool') || 'D';
-    const seatlistVariant = params.get('seatlist') || 'default';
+  const params = new URLSearchParams(window.location.search);
+  let scenario = params.get('scenario') || 'baseline';
+  let pool = params.get('pool') || 'D';
+  const seatlistVariant = params.get('seatlist') || 'default';
 
-    const seatTemplate = await fetch('../../data/seat-template.json').then(r => r.json());
-    const seatlistUrl = seatlistVariant === 'default'
-      ? '../../data/seatlist.json'
-      : `../../data/test-seatlists/${seatlistVariant}.json`;
-    const seatListResponse = await fetch(seatlistUrl).then(r => r.json());
+  const seatTemplate = await fetch('../../data/seat-template.json').then(r => r.json());
+  const seatlistUrl = seatlistVariant === 'default'
+    ? '../../data/seatlist.json'
+    : `../../data/test-seatlists/${seatlistVariant}.json`;
+  const seatListResponse = await fetch(seatlistUrl).then(r => r.json());
 
-    const availabilitySource = seatListResponse.result || [];
-    const targetStandCode = Number(params.get('standCode') || (availabilitySource.find(s => s.status === 'O' && s.bucket === pool)?.stand_Code ?? availabilitySource[0]?.stand_Code ?? seatTemplate[0]?.stand_Code));
+  const availabilitySource = seatListResponse.result || [];
+  const targetStandCode = Number(params.get('standCode') || (availabilitySource.find(s => s.status === 'O' && s.bucket === pool)?.stand_Code ?? availabilitySource[0]?.stand_Code ?? seatTemplate[0]?.stand_Code));
 
-    const filteredTemplate = seatTemplate.filter(seat => Number(seat.stand_Code) === targetStandCode);
-    const syntheticTemplate = availabilitySource
-      .filter(seat => Number(seat.stand_Code) === targetStandCode)
-      .map(seat => ({
-        i_Id: seat.i_Id || 0,
-        event_Code: seat.event_Code || 0,
-        venue_Code: seat.venue_Code || 1,
-        stand_Code: seat.stand_Code,
-        serial_No: seat.serial_No,
-        row: seat.row,
-        box: seat.box || 0,
-        seat_No: seat.seat_No,
-        lm: seat.lm || 0,
-        row_Order: seat.row_Order || 0,
-        row_Gap: seat.row_Gap || 0,
-        status: seat.status || 'U',
-        bucket: seat.bucket || 'U'
-      }));
+  const filteredTemplate = seatTemplate.filter(seat => Number(seat.stand_Code) === targetStandCode);
+  const syntheticTemplate = availabilitySource
+    .filter(seat => Number(seat.stand_Code) === targetStandCode)
+    .map(seat => ({
+      i_Id: seat.i_Id || 0,
+      event_Code: seat.event_Code || 0,
+      venue_Code: seat.venue_Code || 1,
+      stand_Code: seat.stand_Code,
+      serial_No: seat.serial_No,
+      row: seat.row,
+      box: seat.box || 0,
+      seat_No: seat.seat_No,
+      lm: seat.lm || 0,
+      row_Order: seat.row_Order || 0,
+      row_Gap: seat.row_Gap || 0,
+      status: seat.status || 'U',
+      bucket: seat.bucket || 'U'
+    }));
 
-    const templateForRender = filteredTemplate.length ? filteredTemplate : syntheticTemplate;
-    const sortedTemplate = [...templateForRender].sort((a, b) => {
-      const rowOrderA = Number(a.row_Order || 0);
-      const rowOrderB = Number(b.row_Order || 0);
-      if (rowOrderA !== rowOrderB) return rowOrderB - rowOrderA;
+  const templateForRender = filteredTemplate.length ? filteredTemplate : syntheticTemplate;
+  const sortedTemplate = [...templateForRender].sort((a, b) => {
+    const rowOrderA = Number(a.row_Order || 0);
+    const rowOrderB = Number(b.row_Order || 0);
+    if (rowOrderA !== rowOrderB) return rowOrderB - rowOrderA;
 
-      const boxA = Number(a.box || 0);
-      const boxB = Number(b.box || 0);
-      if (boxA !== boxB) return boxA - boxB;
+    const boxA = Number(a.box || 0);
+    const boxB = Number(b.box || 0);
+    if (boxA !== boxB) return boxA - boxB;
 
-      const seatNoA = Number(a.seat_No || 0);
-      const seatNoB = Number(b.seat_No || 0);
-      if (seatNoA !== seatNoB) return seatNoA - seatNoB;
+    const seatNoA = Number(a.seat_No || 0);
+    const seatNoB = Number(b.seat_No || 0);
+    if (seatNoA !== seatNoB) return seatNoA - seatNoB;
 
-      return Number(a.serial_No || 0) - Number(b.serial_No || 0);
+    return Number(a.serial_No || 0) - Number(b.serial_No || 0);
+  });
+
+  let selectedSeatKeys = new Set();
+  let currentSeatStage = null;
+  let currentBackgroundStage = null;
+
+  function computeSeats(template) {
+    let prevRow = '';
+    let x = 10;
+    let y = 10;
+    let maxX = 0;
+    let maxY = 0;
+
+    const seats = template.map(seat => {
+      if (prevRow !== seat.row) {
+        prevRow = seat.row;
+        x = 10;
+        if (seat.row_Gap > 0) y += seat.row_Gap * 44;
+        else y += 25;
+      }
+      if (seat.lm > 0) x += 25 * seat.lm;
+      x += 25;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+      return { ...seat, x, y };
     });
 
-    let selectedSeatKeys = new Set();
-    let currentSeatStage = null;
-    let currentBackgroundStage = null;
+    return { seats, maxX, maxY };
+  }
 
-    function computeSeats(template) {
-      let prevRow = '';
-      let x = 10;
-      let y = 10;
-      let maxX = 0;
-      let maxY = 0;
+  function toSeatKey(seat) {
+    return `${seat.stand_Code}-${seat.row}-${seat.seat_No}`;
+  }
 
-      const seats = template.map(seat => {
-        if (prevRow !== seat.row) {
-          prevRow = seat.row;
-          x = 10;
-          if (seat.row_Gap > 0) y += seat.row_Gap * 44;
-          else y += 25;
-        }
-        if (seat.lm > 0) x += 25 * seat.lm;
-        x += 25;
-        if (x > maxX) maxX = x;
-        if (y > maxY) maxY = y;
-        return { ...seat, x, y };
-      });
-
-      return { seats, maxX, maxY };
+  function buildAvailabilityMap(list, currentPool) {
+    const base = new Map();
+    for (const seat of (list.result || [])) {
+      if (Number(seat.stand_Code) !== targetStandCode) continue;
+      base.set(toSeatKey(seat), { ...seat });
     }
 
-    function toSeatKey(seat) {
-      return `${seat.stand_Code}-${seat.row}-${seat.seat_No}`;
+    // Apply manual click selections for ALL scenarios (including baseline)
+    for (const key of selectedSeatKeys) {
+      const value = base.get(key);
+      if (value && value.status === 'O' && value.bucket === currentPool) {
+        value.__selected = true;
+      }
     }
 
-    function buildAvailabilityMap(list, currentPool) {
-      const base = new Map();
-      for (const seat of (list.result || [])) {
-        if (Number(seat.stand_Code) !== targetStandCode) continue;
-        base.set(toSeatKey(seat), { ...seat });
-      }
-
-      if (scenario === 'baseline' || scenario === 'scaled' || scenario === 'panned' || scenario === 'multistage') {
-        return base;
-      }
-
-      if (scenario === 'selected') {
-        const selectedTargets = ['N-43', 'N-44', 'N-45'];
-        for (const [key, value] of base.entries()) {
-          if (selectedTargets.includes(`${value.row}-${value.seat_No}`)) {
-            value.status = 'O';
-            value.bucket = currentPool;
-            value.__selected = true;
-          }
-        }
-      }
-
-      for (const key of selectedSeatKeys) {
-        const value = base.get(key);
-        if (value && value.status === 'O' && value.bucket === currentPool) {
-          value.__selected = true;
-        }
-      }
-
-      if (scenario === 'selected') return base;
-
-      if (scenario === 'consecutive') {
-        for (const value of base.values()) {
-          value.status = 'S';
-        }
-        const targets = [43, 44, 45, 46, 47, 48];
-        for (const value of base.values()) {
-          if (value.row === 'N' && targets.includes(Number(value.seat_No))) {
-            value.status = 'O';
-            value.bucket = currentPool;
-          }
-        }
-        return base;
-      }
-
-      if (scenario === 'gapped') {
-        for (const value of base.values()) {
-          value.status = 'S';
-        }
-        [43, 44, 46, 47, 50].forEach(num => {
-          for (const value of base.values()) {
-            if (value.row === 'N' && Number(value.seat_No) === num) {
-              value.status = 'O';
-              value.bucket = currentPool;
-            }
-          }
-        });
-        return base;
-      }
-
+    if (scenario === 'baseline' || scenario === 'scaled' || scenario === 'panned' || scenario === 'multistage') {
       return base;
     }
 
-    function renderBackgroundStage() {
-      if (currentBackgroundStage) {
-        currentBackgroundStage.destroy();
+    if (scenario === 'selected') {
+      const selectedTargets = ['N-43', 'N-44', 'N-45'];
+      for (const [key, value] of base.entries()) {
+        if (selectedTargets.includes(`${value.row}-${value.seat_No}`)) {
+          value.status = 'O';
+          value.bucket = currentPool;
+          value.__selected = true;
+        }
       }
-
-      const bgStage = new Konva.Stage({
-        container: 'background-stage',
-        width: 220,
-        height: 160
-      });
-      const bgLayer = new Konva.Layer();
-      bgStage.add(bgLayer);
-      bgLayer.add(new Konva.Rect({ x: 10, y: 10, width: 200, height: 140, fill: '#1f2937', stroke: '#374151' }));
-      bgLayer.add(new Konva.Text({ x: 45, y: 68, text: 'Background Stage', fill: '#e5e7eb', fontSize: 18 }));
-      bgLayer.draw();
-      currentBackgroundStage = bgStage;
-      return bgStage;
     }
 
-    function renderSeatStage() {
-      if (currentSeatStage) {
-        currentSeatStage.destroy();
+    for (const key of selectedSeatKeys) {
+      const value = base.get(key);
+      if (value && value.status === 'O' && value.bucket === currentPool) {
+        value.__selected = true;
       }
+    }
 
-      const container = document.getElementById('seat-stage');
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+    if (scenario === 'selected') return base;
 
-      const { seats, maxX, maxY } = computeSeats(sortedTemplate);
-      const availability = buildAvailabilityMap(seatListResponse, pool);
+    if (scenario === 'consecutive') {
+      for (const value of base.values()) {
+        value.status = 'S';
+      }
+      const targets = [43, 44, 45, 46, 47, 48];
+      for (const value of base.values()) {
+        if (value.row === 'N' && targets.includes(Number(value.seat_No))) {
+          value.status = 'O';
+          value.bucket = currentPool;
+        }
+      }
+      return base;
+    }
 
-      const stage = new Konva.Stage({
-        container: 'seat-stage',
-        width,
-        height,
-        x: 0,
-        y: 0
+    if (scenario === 'gapped') {
+      for (const value of base.values()) {
+        value.status = 'S';
+      }
+      [43, 44, 46, 47, 50].forEach(num => {
+        for (const value of base.values()) {
+          if (value.row === 'N' && Number(value.seat_No) === num) {
+            value.status = 'O';
+            value.bucket = currentPool;
+          }
+        }
       });
-      const layer = new Konva.Layer();
-      stage.add(layer);
+      return base;
+    }
 
-      const availableSeats = [];
-      const selectedSeats = [];
+    return base;
+  }
 
-      let currentRow = '';
-      for (const seat of seats) {
-        const live = availability.get(toSeatKey(seat));
-        const isAvailable = !!(live && live.status === 'O' && live.bucket === pool);
-        const isSelected = !!(isAvailable && live.__selected);
+  function renderBackgroundStage() {
+    if (currentBackgroundStage) {
+      currentBackgroundStage.destroy();
+    }
 
-        if (seat.row !== currentRow) {
-          currentRow = seat.row;
-          layer.add(new Konva.Text({
-            x: seat.x - 22,
-            y: seat.y + 2,
-            text: seat.row,
-            fontSize: 14,
-            fontFamily: 'Arial',
-            fill: '#6d5202',
-            className: 'seatRow'
-          }));
-        }
+    const bgStage = new Konva.Stage({
+      container: 'background-stage',
+      width: 220,
+      height: 160
+    });
+    const bgLayer = new Konva.Layer();
+    bgStage.add(bgLayer);
+    bgLayer.add(new Konva.Rect({ x: 10, y: 10, width: 200, height: 140, fill: '#1f2937', stroke: '#374151' }));
+    bgLayer.add(new Konva.Text({ x: 45, y: 68, text: 'Background Stage', fill: '#e5e7eb', fontSize: 18 }));
+    bgLayer.draw();
+    currentBackgroundStage = bgStage;
+    return bgStage;
+  }
 
-        layer.add(new Konva.Rect({
-          name: isAvailable ? 'seat-rect' : 'blocked-seat-rect',
-          x: seat.x,
-          y: seat.y,
-          width: 18,
-          height: 18,
-          cornerRadius: 5,
-          stroke: isAvailable ? '#a67c00' : '#ccc',
-          fill: isAvailable ? (isSelected ? '#a67c00' : '#ffffff') : '#ccc'
-        }));
+  function renderSeatStage() {
+    if (currentSeatStage) {
+      currentSeatStage.destroy();
+    }
 
-        const seatRect = layer.children[layer.children.length - 1];
-        seatRect.setAttr('seatKey', toSeatKey(seat));
-        seatRect.setAttr('seatRow', seat.row);
-        seatRect.setAttr('seatNumber', seat.seat_No);
-        seatRect.setAttr('isAvailableSeat', isAvailable);
+    const container = document.getElementById('seat-stage');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
 
-        if (isAvailable) {
-          seatRect.on('click tap', () => {
-            const key = seatRect.getAttr('seatKey');
-            if (selectedSeatKeys.has(key)) selectedSeatKeys.delete(key);
-            else selectedSeatKeys.add(key);
-            renderAll();
-          });
-        }
+    const { seats, maxX, maxY } = computeSeats(sortedTemplate);
+    const availability = buildAvailabilityMap(seatListResponse, pool);
 
+    const stage = new Konva.Stage({
+      container: 'seat-stage',
+      width,
+      height,
+      x: 0,
+      y: 0
+    });
+    const layer = new Konva.Layer();
+    stage.add(layer);
+
+    const availableSeats = [];
+    const selectedSeats = [];
+
+    let currentRow = '';
+    for (const seat of seats) {
+      const live = availability.get(toSeatKey(seat));
+      const isAvailable = !!(live && live.status === 'O' && live.bucket === pool);
+      const isSelected = !!(isAvailable && live.__selected);
+
+      if (seat.row !== currentRow) {
+        currentRow = seat.row;
         layer.add(new Konva.Text({
-          x: seat.x,
-          y: seat.y,
-          width: 18,
-          height: 18,
-          text: String(seat.seat_No),
-          align: 'center',
-          verticalAlign: 'middle',
-          fontSize: 10,
-          fill: isAvailable ? '#6d5202' : '#727272'
+          x: seat.x - 22,
+          y: seat.y + 2,
+          text: seat.row,
+          fontSize: 14,
+          fontFamily: 'Arial',
+          fill: '#6d5202',
+          className: 'seatRow'
         }));
-
-        if (isAvailable) {
-          availableSeats.push(seat);
-          if (isSelected) selectedSeats.push(seat);
-        }
       }
 
-      const fitScale = Math.min(1, Math.max(0.3, Math.min(width / (maxX + 80), height / (maxY + 80))));
-      const stageScale = scenario === 'scaled' ? 0.3 : scenario === 'multistage' ? 0.65 : fitScale;
-      stage.scale({ x: stageScale, y: stageScale });
+      layer.add(new Konva.Rect({
+        name: isAvailable ? 'seat-rect' : 'blocked-seat-rect',
+        x: seat.x,
+        y: seat.y,
+        width: 18,
+        height: 18,
+        cornerRadius: 5,
+        stroke: isAvailable ? '#a67c00' : '#ccc',
+        fill: isAvailable ? (isSelected ? '#a67c00' : '#ffffff') : '#ccc'
+      }));
 
-      if (scenario === 'panned') {
-        stage.position({ x: -120, y: -40 });
-      } else {
-      const stageWidth = (maxX + 80) * stageScale;
-      const stageHeight = (maxY + 80) * stageScale;
-      const centerX = Math.max((width - stageWidth) / 2, 0);
-      const centerY = Math.max((height - stageHeight) / 2, 0);
-      stage.position({ x: centerX, y: centerY });
+      const seatRect = layer.children[layer.children.length - 1];
+      seatRect.setAttr('seatKey', toSeatKey(seat));
+      seatRect.setAttr('seatRow', seat.row);
+      seatRect.setAttr('seatNumber', seat.seat_No);
+      seatRect.setAttr('isAvailableSeat', isAvailable);
+
+      if (isAvailable) {
+        seatRect.on('click tap', () => {
+          const key = seatRect.getAttr('seatKey');
+          if (selectedSeatKeys.has(key)) selectedSeatKeys.delete(key);
+          else selectedSeatKeys.add(key);
+          renderAll();
+        });
       }
 
-      layer.draw();
-      currentSeatStage = stage;
+      layer.add(new Konva.Text({
+        x: seat.x,
+        y: seat.y,
+        width: 18,
+        height: 18,
+        text: String(seat.seat_No),
+        align: 'center',
+        verticalAlign: 'middle',
+        fontSize: 10,
+        fill: isAvailable ? '#6d5202' : '#727272',
+        listening: false
+      }));
 
-      const summary = {
-        scenario,
-        pool,
-        seatlistVariant,
-        standCode: targetStandCode,
-        totalTemplateSeats: seats.length,
-        availableSeats: availableSeats.length,
-        selectedSeats: selectedSeats.length,
-        manualSelectedKeys: [...selectedSeatKeys],
-        stageScale,
-        stageX: stage.x(),
-        stageY: stage.y(),
-        layoutWidth: maxX,
-        layoutHeight: maxY
-      };
-
-      window.__HARNESS__ = {
-        scenario,
-        pool,
-        seatlistVariant,
-        summary,
-        availableSeats,
-        selectedSeats,
-        stageCount: Konva.stages.length,
-        manualSelectedKeys: [...selectedSeatKeys]
-      };
-
-      document.getElementById('meta').textContent = `Scenario: ${scenario} | Pool: ${pool} | Seatlist: ${seatlistVariant} | Stand: ${targetStandCode} | Konva stages: ${Konva.stages.length}`;
-      document.getElementById('summary').textContent = JSON.stringify(summary, null, 2);
+      if (isAvailable) {
+        availableSeats.push(seat);
+        if (isSelected) selectedSeats.push(seat);
+      }
     }
 
-    function updateToolbarState() {
-      document.querySelectorAll('[data-scenario]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.scenario === scenario);
-      });
-      document.getElementById('pool-select').value = pool;
+    const fitScale = Math.min(1, Math.max(0.3, Math.min(width / (maxX + 80), height / (maxY + 80))));
+    const stageScale = scenario === 'scaled' ? 0.3 : scenario === 'multistage' ? 0.65 : fitScale;
+    stage.scale({ x: stageScale, y: stageScale });
+
+    if (scenario === 'panned') {
+      stage.position({ x: -120, y: -40 });
+    } else {
+    const stageWidth = (maxX + 80) * stageScale;
+    const stageHeight = (maxY + 80) * stageScale;
+    const centerX = Math.max((width - stageWidth) / 2, 0);
+    const centerY = Math.max((height - stageHeight) / 2, 0);
+    stage.position({ x: centerX, y: centerY });
     }
 
-    function updateUrl() {
-      const next = new URL(window.location.href);
-      next.searchParams.set('scenario', scenario);
-      next.searchParams.set('pool', pool);
-      next.searchParams.set('seatlist', seatlistVariant);
-      next.searchParams.set('standCode', String(targetStandCode));
-      window.history.replaceState({}, '', next.toString());
-    }
+    layer.draw();
+    currentSeatStage = stage;
 
-    function renderAll() {
-      updateToolbarState();
-      updateUrl();
-      renderBackgroundStage();
-      renderSeatStage();
-    }
-
-    document.querySelectorAll('[data-scenario]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        scenario = btn.dataset.scenario;
-        selectedSeatKeys = new Set();
-        renderAll();
-      });
-    });
-
-    document.getElementById('pool-select').addEventListener('change', (event) => {
-      pool = event.target.value;
-      selectedSeatKeys = new Set();
-      renderAll();
-    });
-
-    document.getElementById('reset-selected').addEventListener('click', () => {
-      selectedSeatKeys = new Set();
-      renderAll();
-    });
-
-    const cartState = { attempts: 0 };
-    window.__harnessAddToCartState = cartState;
-    window.__simulateAddToCart = async (selectedKeys = []) => {
-      cartState.attempts += 1;
-      const availableSeats = window.__HARNESS__?.availableSeats || [];
-      const availableKeys = new Set(availableSeats.map(toSeatKey));
-      const allSelectedAvailable = selectedKeys.length > 0 && selectedKeys.every(key => availableKeys.has(key));
-
-      const baseResponse = {
-        selectedKeys,
-        attempts: cartState.attempts,
-        scenario,
-        pool,
-        seatlistVariant
-      };
-
-      const shouldFail = (message) => ({
-        ...baseResponse,
-        status: 'Failure',
-        message
-      });
-
-      const successResponse = () => ({
-        ...baseResponse,
-        status: 'Success',
-        message: 'Seats added to cart'
-      });
-
-      if (seatlistVariant === 'seatlist-stand-full') {
-        return new Promise(res => setTimeout(() => res(shouldFail('STAND FULL')), 120));
-      }
-
-      if (seatlistVariant === 'seatlist-no-consecutive') {
-        return new Promise(res => setTimeout(() => res(shouldFail('SEAT NOT AVAILABLE')), 120));
-      }
-
-      if (seatlistVariant === 'seatlist-retry-step1' && cartState.attempts === 1) {
-        return new Promise(res => setTimeout(() => res(shouldFail('SEAT NOT AVAILABLE')), 120));
-      }
-
-      if (seatlistVariant === 'seatlist-retry-step2' && cartState.attempts < 3) {
-        return new Promise(res => setTimeout(() => res(shouldFail('SEAT NOT AVAILABLE')), 120));
-      }
-
-      if (!allSelectedAvailable) {
-        return new Promise(res => setTimeout(() => res(shouldFail('SEAT NOT AVAILABLE')), 120));
-      }
-
-      return new Promise(res => setTimeout(() => res(successResponse()), 120));
+    const summary = {
+      scenario,
+      pool,
+      seatlistVariant,
+      standCode: targetStandCode,
+      totalTemplateSeats: seats.length,
+      availableSeats: availableSeats.length,
+      selectedSeats: selectedSeats.length,
+      manualSelectedKeys: [...selectedSeatKeys],
+      stageScale,
+      stageX: stage.x(),
+      stageY: stage.y(),
+      layoutWidth: maxX,
+      layoutHeight: maxY
     };
 
+    window.__HARNESS__ = {
+      scenario,
+      pool,
+      seatlistVariant,
+      summary,
+      availableSeats,
+      selectedSeats,
+      stageCount: Konva.stages.length,
+      manualSelectedKeys: [...selectedSeatKeys]
+    };
+
+    document.getElementById('meta').textContent = `Scenario: ${scenario} | Pool: ${pool} | Seatlist: ${seatlistVariant} | Stand: ${targetStandCode} | Konva stages: ${Konva.stages.length}`;
+    document.getElementById('summary').textContent = JSON.stringify(summary, null, 2);
+  }
+
+  function updateToolbarState() {
+    document.querySelectorAll('[data-scenario]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.scenario === scenario);
+    });
+    document.getElementById('pool-select').value = pool;
+  }
+
+  function updateUrl() {
+    const next = new URL(window.location.href);
+    next.searchParams.set('scenario', scenario);
+    next.searchParams.set('pool', pool);
+    next.searchParams.set('seatlist', seatlistVariant);
+    next.searchParams.set('standCode', String(targetStandCode));
+    window.history.replaceState({}, '', next.toString());
+  }
+
+  function renderAll() {
+    updateToolbarState();
+    updateUrl();
+    renderBackgroundStage();
+    renderSeatStage();
+  }
+
+  document.querySelectorAll('[data-scenario]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      scenario = btn.dataset.scenario;
+      selectedSeatKeys = new Set();
+      renderAll();
+    });
+  });
+
+  document.getElementById('pool-select').addEventListener('change', (event) => {
+    pool = event.target.value;
+    selectedSeatKeys = new Set();
     renderAll();
-  </script>
+  });
+
+  document.getElementById('reset-selected').addEventListener('click', () => {
+    selectedSeatKeys = new Set();
+    renderAll();
+  });
+
+  // ── Programmatic API for Playwright tests ──────────────────────────
+
+  /**
+   * Swap the seatlist data and re-render the canvas.
+   * Simulates what happens when the real site gets a fresh seatlist API response.
+   * @param {string} variant - seatlist variant name (e.g., 'seatlist-retry-step2')
+   * @returns {Promise<{ok: boolean, availableSeats: number, selectedSeats: number}>}
+   */
+  window.__swapSeatlist = async (variant) => {
+    const url = variant === 'default'
+      ? '../../data/seatlist.json'
+      : `../../data/test-seatlists/${variant}.json`;
+    const newData = await fetch(url).then(r => r.json());
+    // Replace the seatlist response in-place
+    seatListResponse.result = newData.result || [];
+    seatListResponse.status = newData.status || 'Success';
+    // Clear manual selections and re-render
+    selectedSeatKeys = new Set();
+    renderAll();
+    const h = window.__HARNESS__ || {};
+    return {
+      ok: true,
+      availableSeats: h.summary?.availableSeats || 0,
+      selectedSeats: h.summary?.selectedSeats || 0,
+      stageCount: Konva.stages.length
+    };
+  };
+
+  /**
+   * Toggle a seat's selected state by its Konva position.
+   * Used by tests to programmatically select seats without mouse clicks.
+   * @param {number} konvaX
+   * @param {number} konvaY
+   * @returns {{toggled: boolean, key: string|null, nowSelected: boolean}}
+   */
+  window.__toggleSeatByKonvaPos = (konvaX, konvaY) => {
+    if (!currentSeatStage) return { toggled: false, key: null, nowSelected: false };
+    const layers = currentSeatStage.getLayers();
+    for (const layer of layers) {
+      const rects = layer.find('Rect');
+      for (const rect of rects) {
+        if (rect.attrs.x === konvaX && rect.attrs.y === konvaY && rect.attrs.stroke === '#a67c00') {
+          const key = rect.getAttr('seatKey');
+          if (!key) continue;
+          if (selectedSeatKeys.has(key)) {
+            selectedSeatKeys.delete(key);
+            renderAll();
+            return { toggled: true, key, nowSelected: false };
+          } else {
+            selectedSeatKeys.add(key);
+            renderAll();
+            return { toggled: true, key, nowSelected: true };
+          }
+        }
+      }
+    }
+    return { toggled: false, key: null, nowSelected: false };
+  };
+
+  /**
+   * Get detailed debug info about a specific Konva position.
+   * Helps diagnose click coordinate mismatches.
+   */
+  window.__debugSeatAt = (konvaX, konvaY) => {
+    if (!currentSeatStage) return { error: 'no stage' };
+    const scale = currentSeatStage.scaleX();
+    const stageX = currentSeatStage.x();
+    const stageY = currentSeatStage.y();
+    const canvas = currentSeatStage.container()?.querySelector('canvas');
+    const canvasRect = canvas ? canvas.getBoundingClientRect() : null;
+
+    // Expected browser position (same formula as readSeatsFromCanvas)
+    const absX = konvaX * scale + stageX;
+    const absY = konvaY * scale + stageY;
+    const expectedBrowserX = canvasRect ? canvasRect.left + absX + 9 : null;
+    const expectedBrowserY = canvasRect ? canvasRect.top + absY + 9 : null;
+
+    // Find the actual Rect at this position
+    let foundRect = null;
+    const layers = currentSeatStage.getLayers();
+    for (const layer of layers) {
+      for (const rect of layer.find('Rect')) {
+        if (rect.attrs.x === konvaX && rect.attrs.y === konvaY && rect.attrs.width === 18) {
+          const ap = rect.getAbsolutePosition();
+          foundRect = {
+            konvaX: rect.attrs.x,
+            konvaY: rect.attrs.y,
+            absPos: { x: ap.x, y: ap.y },
+            fill: rect.attrs.fill,
+            stroke: rect.attrs.stroke,
+            seatKey: rect.getAttr('seatKey'),
+            seatRow: rect.getAttr('seatRow'),
+            seatNumber: rect.getAttr('seatNumber'),
+          };
+          break;
+        }
+      }
+      if (foundRect) break;
+    }
+
+    return {
+      scale, stageX, stageY,
+      canvasRect: canvasRect ? { left: canvasRect.left, top: canvasRect.top, width: canvasRect.width, height: canvasRect.height } : null,
+      computedAbsX: absX,
+      computedAbsY: absY,
+      expectedBrowserX,
+      expectedBrowserY,
+      foundRect,
+      // Also compute using getAbsolutePosition for comparison
+      absPosBrowserX: foundRect ? canvasRect.left + foundRect.absPos.x + 9 : null,
+      absPosBrowserY: foundRect ? canvasRect.top + foundRect.absPos.y + 9 : null,
+    };
+  };
+
+  /**
+   * Get the count of selected seats (gold fill) directly from Konva nodes.
+   * More reliable than reading __HARNESS__ which only updates on renderAll().
+   */
+  window.__getSelectedCount = () => {
+    if (!currentSeatStage) return { selected: 0, unselected: 0, total: 0 };
+    let selected = 0, unselected = 0;
+    const layers = currentSeatStage.getLayers();
+    for (const layer of layers) {
+      for (const rect of layer.find('Rect')) {
+        if (rect.attrs.width !== 18 || rect.attrs.height !== 18) continue;
+        if (rect.attrs.stroke === '#a67c00') {
+          if (rect.attrs.fill === '#a67c00') selected++;
+          else unselected++;
+        }
+      }
+    }
+    return { selected, unselected, total: selected + unselected };
+  };
+
+  const cartState = { attempts: 0 };
+  window.__harnessAddToCartState = cartState;
+  window.__simulateAddToCart = async (selectedKeys = []) => {
+    cartState.attempts += 1;
+    const availableSeats = window.__HARNESS__?.availableSeats || [];
+    const availableKeys = new Set(availableSeats.map(toSeatKey));
+    const allSelectedAvailable = selectedKeys.length > 0 && selectedKeys.every(key => availableKeys.has(key));
+
+    const baseResponse = {
+      selectedKeys,
+      attempts: cartState.attempts,
+      scenario,
+      pool,
+      seatlistVariant
+    };
+
+    const shouldFail = (message) => ({
+      ...baseResponse,
+      status: 'Failure',
+      message
+    });
+
+    const successResponse = () => ({
+      ...baseResponse,
+      status: 'Success',
+      message: 'Seats added to cart'
+    });
+
+    if (seatlistVariant === 'seatlist-stand-full') {
+      return new Promise(res => setTimeout(() => res(shouldFail('STAND FULL')), 120));
+    }
+
+    if (seatlistVariant === 'seatlist-no-consecutive') {
+      return new Promise(res => setTimeout(() => res(shouldFail('SEAT NOT AVAILABLE')), 120));
+    }
+
+    if (seatlistVariant === 'seatlist-retry-step1' && cartState.attempts === 1) {
+      return new Promise(res => setTimeout(() => res(shouldFail('SEAT NOT AVAILABLE')), 120));
+    }
+
+    if (seatlistVariant === 'seatlist-retry-step2' && cartState.attempts < 3) {
+      return new Promise(res => setTimeout(() => res(shouldFail('SEAT NOT AVAILABLE')), 120));
+    }
+
+    if (!allSelectedAvailable) {
+      return new Promise(res => setTimeout(() => res(shouldFail('SEAT NOT AVAILABLE')), 120));
+    }
+
+    return new Promise(res => setTimeout(() => res(successResponse()), 120));
+  };
+
+  renderAll();
+</script>
 </body>
 </html>

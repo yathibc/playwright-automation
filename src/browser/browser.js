@@ -1,4 +1,6 @@
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+chromium.use(StealthPlugin());
 const { createModuleLogger } = require('../utils/logger');
 const config = require('../config/config');
 const NetworkCapture = require('../utils/networkCapture');
@@ -47,13 +49,32 @@ class BrowserManager {
         ]
       });
 
+      // Rotate unique userAgent per sessionId to avoid bot detection fingerprinting
+      const userAgents = [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.6835.111 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.6943.220 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.6834.99 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.6778.264 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.116 Safari/537.36'
+      ];
+      const selectedUA = userAgents[(this.sessionId - 1) % userAgents.length];
+
+      // Vary geolocation slightly per sessionId to avoid identical fingerprints
+      const geoLocations = [
+        { longitude: 77.5946, latitude: 12.9716 },  // Bangalore center
+        { longitude: 77.6209, latitude: 12.9352 },  // Bangalore east
+        { longitude: 77.5412, latitude: 12.9689 },  // Bangalore west
+        { longitude: 77.6199, latitude: 13.0015 },  // Bangalore north
+        { longitude: 77.5345, latitude: 12.9250 }   // Bangalore south
+      ];
+      const selectedGeo = geoLocations[(this.sessionId - 1) % geoLocations.length];
+
       const contextOptions = {
         viewport: null,
         ignoreHTTPSErrors: true,
-        userAgent:
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
+        userAgent: selectedUA,
         permissions: ['geolocation'],
-        geolocation: { longitude: 77.5946, latitude: 12.9716 }
+        geolocation: selectedGeo
       };
 
       if (fs.existsSync(this.storageStateFile)) {
@@ -167,30 +188,61 @@ class BrowserManager {
   async applyStealthScripts() {
     try {
       await this.context.addInitScript(() => {
+        // Hide webdriver property
         Object.defineProperty(navigator, 'webdriver', {
           get: () => false,
           configurable: true
         });
 
+        // Mock chrome runtime
         if (!window.chrome) {
           window.chrome = {};
         }
         if (!window.chrome.runtime) {
           window.chrome.runtime = {
             connect: () => {},
-            sendMessage: () => {}
+            sendMessage: () => {},
+            onMessage: {
+              addListener: () => {}
+            }
           };
         }
 
+        // Mock plugins (empty by default)
+        if (!navigator.plugins || navigator.plugins.length === 0) {
+          Object.defineProperty(navigator, 'plugins', {
+            get: () => [
+              { name: 'Chrome PDF Plugin', version: '1.0', description: 'Portable Document Format' },
+              { name: 'Chrome PDF Viewer', version: '1.0' }
+            ],
+            configurable: true
+          });
+        }
+
+        // Mock permissions
+        const originalQuery = navigator.permissions.query;
+        navigator.permissions.query = (parameters) => (
+          parameters.name === 'notifications' ?
+            Promise.resolve({ state: Notification.permission }) :
+            originalQuery(parameters)
+        );
+
+        // Set language properties
         Object.defineProperty(navigator, 'languages', {
           get: () => ['en-US', 'en'],
           configurable: true
         });
+        Object.defineProperty(navigator, 'language', {
+          get: () => 'en-US',
+          configurable: true
+        });
 
+        // Clean playwright/puppeteer markers
         delete window.__playwright;
         delete window.__pw_manual;
+        delete window.__chromium_bidi_mapper_script;
       });
-      logger.info('Stealth anti-detection scripts applied');
+      logger.info('✅ Enhanced stealth anti-detection scripts applied');
     } catch (error) {
       logger.warn(`Failed to apply stealth scripts: ${error.message}`);
     }
@@ -223,6 +275,68 @@ class BrowserManager {
     });
   }
 
+  // ── Blank Page & Bot Detection ──────────────────────────────────────
+  /**
+   * Detect if page is blank, blocked, or shows bot detection challenge
+   * Returns true if page appears to be a normal page, false if blocked/blank
+   */
+  async isPageBlocked() {
+    try {
+      const url = this.page.url().toLowerCase();
+
+      // Check for about:blank or data: URLs (blank page)
+      if (url === 'about:blank' || url.startsWith('data:')) {
+        logger.warn(`Page appears blank (URL: ${url})`);
+        return true;
+      }
+
+      // Check if URL doesn't match target domain
+      const targetDomain = config.website.url.toLowerCase().split('/')[2];
+      if (!url.includes(targetDomain)) {
+        logger.warn(`Page URL doesn't match target domain. URL: ${url}, Expected domain: ${targetDomain}`);
+        return true;
+      }
+
+      // Check if page body is essentially empty (blank page from server block)
+      const bodyLength = await this.page.evaluate(() => (document.body?.innerText || '').trim().length).catch(() => -1);
+      if (bodyLength === 0) {
+        logger.warn(`Page body is empty — likely blocked or failed to load`);
+        return true;
+      }
+
+      // Check page title and content for specific bot-detection challenge pages.
+      // Use narrow patterns to avoid false positives on legitimate ticket pages.
+      const pageTitle = await this.page.title().catch(() => '');
+      const titleLower = (pageTitle || '').toLowerCase();
+
+      if (titleLower.includes('just a moment') || titleLower.includes('attention required')) {
+        logger.warn(`Page title indicates Cloudflare challenge: "${pageTitle}"`);
+        return true;
+      }
+
+      // Only check body text if the page has very little content (challenge pages are short)
+      if (bodyLength >= 0 && bodyLength < 500) {
+        const pageText = await this.page.locator('body').textContent().catch(() => '').then(t => (t || '').toLowerCase());
+        const challengePatterns = [
+          'checking your browser',
+          'please enable javascript',
+          'ray id',                    // Cloudflare Ray ID
+          'ddos protection by',
+          'access denied'
+        ];
+        if (challengePatterns.some(pattern => pageText.includes(pattern))) {
+          logger.warn(`Page appears blocked by bot detection (short page with challenge indicators)`);
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      logger.debug(`Error checking if page is blocked: ${error.message}`);
+      return false;
+    }
+  }
+
   // ── Navigation (speed-optimized) ────────────────────────────────────
 
   async navigateToWebsite() {
@@ -232,6 +346,14 @@ class BrowserManager {
         timeout: config.website.navigationTimeout
       });
       await this.waitForPageReady();
+
+      // Check if page was blocked by bot detection
+      const blocked = await this.isPageBlocked();
+      if (blocked) {
+        logger.warn(`⚠️ Website navigation may have been blocked by bot detection. Page appears blank or inaccessible.`);
+        return false;
+      }
+
       return true;
     } catch (error) {
       logger.error(`Failed to navigate to website: ${error.message}`);
@@ -241,18 +363,49 @@ class BrowserManager {
 
   /**
    * Fast navigation — uses domcontentloaded, no unnecessary waits.
+   * Includes blank-page detection and retry logic for bot detection recovery.
    */
   async navigateFast(url, timeout = null) {
-    try {
-      await this.page.goto(url, {
-        waitUntil: 'domcontentloaded',
-        timeout: timeout || config.website.navigationTimeout
-      });
-      return true;
-    } catch (error) {
-      logger.error(`Fast navigation to ${url} failed: ${error.message}`);
-      return false;
+    const maxRetries = 3;
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.page.goto(url, {
+          waitUntil: 'domcontentloaded',
+          timeout: timeout || config.website.navigationTimeout
+        });
+
+        // Check if page loaded successfully (not blank/blocked)
+        const blocked = await this.isPageBlocked();
+        if (!blocked) {
+          if (attempt > 1) {
+            logger.info(`✅ Navigation succeeded on attempt ${attempt}/${maxRetries}`);
+          }
+          return true;
+        }
+
+        // Page appears blocked, will retry
+        lastError = 'Page appears blocked by bot detection';
+        if (attempt < maxRetries) {
+          const jitter = Math.floor(Math.random() * 1000);
+          const delay = 1000 * attempt + jitter;
+          logger.warn(`⚠️ Attempt ${attempt}: Page blocked, retrying in ${delay}ms...`);
+          await this.page.waitForTimeout(delay);
+        }
+      } catch (error) {
+        lastError = error.message;
+        if (attempt < maxRetries) {
+          const jitter = Math.floor(Math.random() * 1000);
+          const delay = 1000 * attempt + jitter;
+          logger.warn(`⚠️ Attempt ${attempt} failed: ${error.message}, retrying in ${delay}ms...`);
+          await this.page.waitForTimeout(delay);
+        }
+      }
     }
+
+    logger.error(`Fast navigation to ${url} failed after ${maxRetries} attempts: ${lastError}`);
+    return false;
   }
 
   async waitForPageReady(timeout = 5000) {
